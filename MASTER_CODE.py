@@ -4,6 +4,12 @@ Created on Tue Feb 27 11:46:27 2024
 @author: KVasilakou 
 """
 
+import os
+import rasterio
+import xarray as xr
+import numpy as np
+from osgeo import gdal
+
 ###############################################################################
 ############################### USER INPUTS ###################################
 ###############################################################################
@@ -20,15 +26,8 @@ year_start = 2021
 year_end = 2022
 
 
-
-
-
-#%%
 ############################### RIVER VOLUME #################################  
-import os
-import rasterio
-import xarray as xr
-import numpy as np
+
 
 # Add path with raw data
 discharge_path = 'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/Discharge/RCP60/MIROC'
@@ -78,9 +77,6 @@ for year in range(2021, 2100):
 #%%
 
 ############################# ADVECTION RATES ################################
-import xarray as xr
-import numpy as np
-import rasterio
 
 # Open the TIF file using rasterio
 with rasterio.open('C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/Lakes/HydroLAKES_Volume_0.5.tif') as src:
@@ -135,9 +131,6 @@ for year in range(2021, 2100):
 #%%
 
 ######################## RETENTION RATES #####################################
-import xarray as xr
-import numpy as np
-import rasterio
 
 
 def read_geotiff_to_xarray(tif_file):
@@ -216,9 +209,7 @@ for year in range(2021, 2100):
 
 #%%
 ######################## WATER USE RATES #####################################
-import xarray as xr
-import numpy as np
-import rasterio
+
 
 def read_geotiff_to_xarray(tif_file):
     """Read GeoTIFF file and convert to xarray DataArray"""
@@ -323,9 +314,6 @@ for year in range(2021, 2100):
 
 #%%
 ###################### FISH RICHNESS DENSITY ##################################
-import xarray as xr
-import numpy as np
-import rasterio
 
 # Open the TIF file using rasterio
 with rasterio.open('C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/Lakes/HydroLAKES_Volume_0.5.tif') as src:
@@ -393,9 +381,7 @@ if rcp == 26:
 
 #%%
 ######################### Effect factor ################################
-import xarray as xr
-import numpy as np
-import rasterio
+
 
 ################### Linear effect factor calculation #########################
 # Open the TIF file using rasterio
@@ -544,12 +530,6 @@ for year in range(2021, 2100):
 #%%
 
 ######################### CHARACTERIZATION FACTORS ############################
-
-import numpy as np
-from osgeo import gdal
-import rasterio
-import xarray as xr
-
 
 # Open the ASCII grid file
 with rasterio.open('C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/Flow direction/g_network.asc') as src:
