@@ -1,4 +1,13 @@
-########################## 4. FISH RICHNESS ################################
+"""
+Created on Tue Feb 27 11:46:27 2024
+
+@author: KVasilakou 
+"""
+
+################################################################################
+################################# FISH RICHNESS ################################
+################################################################################
+
 # Open the GeoTIFF file
 with rasterio.open("/data/...tif") as src1:
     fishbase_data = src1.read(1)  
@@ -117,4 +126,4 @@ for temp in temperatures:
     # Save aggregated data to netCDF file
     new_file = f'Fish_richness_{temp}.nc'
     fishrichness_data.to_netcdf(new_file)
-    print(f"Resampled data saved to {new_file}")
+    print(f"FSR data saved to {new_file}")
