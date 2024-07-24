@@ -7,13 +7,20 @@ import rasterio
 import xarray as xr
 import numpy as np
 
+#User must manually download the following raw data:
+#1. River discharge: https://doi.org/10.48364/ISIMIP.626689
+#2. Runoff: https://doi.org/10.48364/ISIMIP.626689
+#3. Irrigation water withdrawal: https://doi.org/10.48364/ISIMIP.626689
+#4. Fish richness: https://doi.org/10.1038/s41467-021-21655-w
+
+
 ############################ 1. DISCHARGE DATA ################################
 # Load the .nc4 file
 nc_file = '../data/...nc4'
 data = xr.open_dataset(nc_file)
 
 # Iterate over each year
-for year in range(year_start, year_end+1):
+for year in range(2021, 2100):
     # Select data for the current year
     yearly_data = data.sel(time=str(year))
     
@@ -34,7 +41,7 @@ data = xr.open_dataset(nc_file)
 conversion_factor = 60 * 60 * 24 * 365  # seconds in a year
 
 # Iterate over each year
-for year in range(year_start, year_end+1):
+for year in range(2021, 2100):
     # Select data for the current year
     yearly_data = data.sel(time=str(year))
     
@@ -55,15 +62,15 @@ nc_file = '../data/...nc4'
 data = xr.open_dataset(nc_file, engine='netcdf4', decode_times=False)
 
 # Calculate the start and end indices for each year from 2021 to 2099
-start_index = (year_start - 2006) * 12  
-end_index = (year_end - 2006 + 1) * 12 
+start_index = (2021 - 2006) * 12  
+end_index = (2099 - 2006 + 1) * 12 
 
 # Define the number of seconds in each month 
 days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 seconds_in_month = np.array(days_in_month) * 24 * 60 * 60
 
 # Iterate over each year
-for year in range(year_start, year_end):
+for year in range(2021, 2100):
     # Calculate the indices for the current year
     start_month = (year - 2006) * 12  
     end_month = start_month + 12 
@@ -84,7 +91,7 @@ for year in range(year_start, year_end):
 
 ########################## 4. FISH RICHNESS ################################
 # Open the GeoTIFF file
-with rasterio.open("C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/Future/Fish richness/Raw data/Fish_richness_base.tif") as src1:
+with rasterio.open("/data/...tif") as src1:
     fishbase_data = src1.read(1)  
     fishbase_meta = src1.meta
     profile1 = src1.profile  
@@ -151,7 +158,7 @@ print(f"Resampled data saved to {resampled_nc_file}")
 temperatures = [1.5, 2.0, 3.2]
 for temp in temperatures:
     # File path for PAF datasets
-    PAF_tif_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/Future/Fish richness/Raw data/PAF_no_dispersal_{temp}.tif'
+    PAF_tif_file = f'/data/...PAF_no_dispersal_{temp}.tif'
     
     # Open the GeoTIFF file
     with rasterio.open(PAF_tif_file) as src2:
@@ -199,6 +206,6 @@ for temp in temperatures:
     fishrichness_data['latitude'] = rounded_latitude 
     
     # Save aggregated data to netCDF file
-    resampled_nc_file = f'Fish_richness_0.5_{temp}.nc'
-    fishrichness_data.to_netcdf(resampled_nc_file)
-    print(f"Resampled data saved to {resampled_nc_file}")
+    new_file = f'Fish_richness_{temp}.nc'
+    fishrichness_data.to_netcdf(new_file)
+    print(f"Resampled data saved to {new_file}")
