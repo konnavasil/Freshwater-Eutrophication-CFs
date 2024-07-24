@@ -20,18 +20,13 @@ RCP = 26
 #GCM = 'gfdl', 'hadgem', 'ipsl', 'miroc'
 GCM = 'gfdl'
 
-#SPECIFY YEAR OF ANALYSIS!! 
-#Permitted years range from 2021 to 2099
-year_start = 2021
-year_end = 2022
-
 
 ############################### RIVER VOLUME #################################  
 
 
 # Add path with raw data
-discharge_path = 'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/Discharge/RCP60/MIROC'
-area_path = 'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/Land cover'
+discharge_path = '/data/Discharge/RCP_{RCP}/{GCM}'
+area_path = '/data/Land cover'
 
 # Read Area data
 with rasterio.open(os.path.join(area_path, 'Land_area_0.5.tif')) as src:
