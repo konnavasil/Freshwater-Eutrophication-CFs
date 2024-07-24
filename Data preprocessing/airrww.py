@@ -1,4 +1,13 @@
-############################ 3. WATER IRRIGATION ##############################
+"""
+Created on Tue Feb 27 11:46:27 2024
+
+@author: KVasilakou 
+"""
+
+###############################################################################
+############################### WATER IRRIGATION ##############################
+###############################################################################
+
 # Load the NetCDF file with decode_times=False
 nc_file = '../data/...nc4'
 data = xr.open_dataset(nc_file, engine='netcdf4', decode_times=False)
