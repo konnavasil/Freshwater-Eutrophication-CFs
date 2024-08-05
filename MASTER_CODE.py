@@ -24,9 +24,9 @@ GCM = 'GFDL'
 ############################### RIVER VOLUME #################################  
 # Add path with raw data
 discharge_path = f'/data/Discharge/RCP{RCP}/{GCM}'
-area_path = '/data/Land.nc'
-area =  xr.open_dataset(area_path)
-land_area = area['land'].data
+land_path = '/data/Land.nc'
+land =  xr.open_dataset(land_path)
+land_area = land['land'].data
 
 for year in range(2021, 2100):
     # Read Discharge data
@@ -60,8 +60,8 @@ for year in range(2021, 2100):
 
 ############################# ADVECTION RATES ################################
 volume_path = '/data/Lakesvol.nc'
-data =  xr.open_dataset(volume_path)
-lakesvol = data['lakesvol_data_padded'].data #m3
+volume_data =  xr.open_dataset(volume_path)
+lakesvol = volume_data['lakesvol_data_padded'].data #m3
 
 # Iterate over each year
 for year in range(2021, 2100):
@@ -93,47 +93,19 @@ for year in range(2021, 2100):
     adv_rate_da_float32.to_netcdf(adv_nc_file)
     print(f"Data saved to {adv_nc_file}")
 
-#%%
-
 ######################## RETENTION RATES #####################################
-
-
-def read_geotiff_to_xarray(tif_file):
-    """Read GeoTIFF file and convert to xarray DataArray"""
-    with rasterio.open(tif_file) as src:
-        # Read the image data
-        tif_data = src.read(1)
-        # Get the metadata (e.g., coordinate reference system)
-        tif_meta = src.meta
-
-    # Create x and y coordinates corresponding to the shape of the data
-    y_coords = np.arange(tif_data.shape[0])
-    x_coords = np.arange(tif_data.shape[1])
-
-    # Convert the TIF data to xarray DataArray
-    return xr.DataArray(tif_data, dims=('y', 'x'))
-
-# File paths for volume and area datasets
-volume_tif_file = 'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/Lakes/HydroLAKES_Volume_0.5.tif'
-area_tif_file = 'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/Lakes/HydroLAKES_Area_0.5.tif'
-
-# Read volume and area datasets
-lakesvol_data_padded = read_geotiff_to_xarray(volume_tif_file)
-lakesarea_data_padded = read_geotiff_to_xarray(area_tif_file)
-
-# Add additional rows filled with NaN values to create 360x720
-nan_rows = np.full((60, lakesvol_data_padded.sizes['x']), np.nan)
-lakesvol_data_padded = xr.concat([lakesvol_data_padded, xr.DataArray(nan_rows, dims=('y', 'x'))], dim='y') #m3
-lakesarea_data_padded = xr.concat([lakesarea_data_padded, xr.DataArray(nan_rows, dims=('y', 'x'))], dim='y') #m2
+area_path = '/data/Lakesarea.nc'
+area_data =  xr.open_dataset(area_path)
+lakesarea = area_data['lakesarea'].data #m2
 
 # Iterate over each year
 for year in range(2021, 2100):
     
     # Load the NetCDF files
-    discharge_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS\Eutrophication CFs/GLOBAL/FUTURE/Discharge/RCP60/MIROC/Discharge_0.5_{year}.nc'
+    discharge_file = f'/data/Discharge/RCP{RCP}/{GCM}/Discharge_{RCP}_{GCM}_{year}.nc'
     discharge_data = xr.open_dataset(discharge_file) #m3/s
     
-    rivervol_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS\Eutrophication CFs/GLOBAL/FUTURE/River volume/RCP60/MIROC/Rivervol_0.5_{year}.nc'
+    rivervol_file = f'/data/Rivervol/RCP{RCP}/{GCM}/Rivervol_{RCP}_{GCM}_{year}.nc'
     rivervol_data = xr.open_dataset(rivervol_file) #m3
     
     # Define the conditions and corresponding values
@@ -148,28 +120,18 @@ for year in range(2021, 2100):
     kret_riv = xr.where(condition_1, value_1, xr.where(condition_2, value_2, value_3))
 
     #Calculate retention rate
-    ret_rate = (1 / (rivervol_data.river_vol + lakesvol_data_padded.values)) * (rivervol_data.river_vol * kret_riv.values + 0.038 * lakesarea_data_padded.values)
+    ret_rate = (1 / (rivervol_data.river_vol + lakesvol)) * (rivervol_data.river_vol * kret_riv.values + 0.038 * lakesarea)
 
     # Convert adv_rate to xarray DataArray
     ret_rate_da = xr.DataArray(ret_rate, dims=('lat', 'lon'), name='ret_rate')
-    # Add coordinate values if needed (assuming Latitude and Longitude coordinates)
     ret_rate_da['lat'] = discharge_data['lat']
     ret_rate_da['lon'] = discharge_data['lon']
-    
-    # Convert the advection rate data to float32
     ret_rate_da_float32 = ret_rate_da.astype(np.float32)
     
     # Save the advection rate as NetCDF file
     ret_nc_file = f'Ret_0.5_{year}.nc' #d-1
     ret_rate_da_float32.to_netcdf(ret_nc_file)
     print(f"Data saved to {ret_nc_file}")
-
-#%%
-
-
-
-#%%
-
 
 
 #%%
