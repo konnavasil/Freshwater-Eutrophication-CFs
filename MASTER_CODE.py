@@ -23,7 +23,7 @@ GCM = 'GFDL'
 
 ############################### RIVER VOLUME #################################  
 # Add path with raw data
-discharge_path = f'/data/Discharge/RCP_{RCP}/{GCM}'
+discharge_path = f'/data/Discharge/RCP{RCP}/{GCM}'
 area_path = '/data/Land.nc'
 area =  xr.open_dataset(area_path)
 land_area = area['land'].data
@@ -57,43 +57,24 @@ for year in range(2021, 2100):
     river_vol_da.to_netcdf(river_vol_nc_file)
 
     print(f"Data saved to {river_vol_nc_file}")
-        
-#%%
 
 ############################# ADVECTION RATES ################################
-
-# Open the TIF file using rasterio
-with rasterio.open('C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/Lakes/HydroLAKES_Volume_0.5.tif') as src:
-    # Read the image data
-    tif_data = src.read(1)
-    # Get the metadata (e.g., coordinate reference system)
-    tif_meta = src.meta
-
-# Create x and y coordinates corresponding to the shape of the data
-y_coords = np.arange(tif_data.shape[0])
-x_coords = np.arange(tif_data.shape[1])
-
-# Convert the TIF data to xarray DataArray
-lakesvol_data = xr.DataArray(tif_data, dims=('y', 'x'))
-
-# Add additional rows filled with NaN values to create 360x720
-nan_rows = np.full((60, lakesvol_data.sizes['x']), np.nan)
-lakesvol_data_padded = xr.concat([lakesvol_data, xr.DataArray(nan_rows, dims=('y', 'x'))], dim='y') #m3
+volume_path = '/data/Lakesvol.nc'
+data =  xr.open_dataset(volume_path)
+lakesvol = data['lakesvol_data_padded'].data #m3
 
 # Iterate over each year
 for year in range(2021, 2100):
     
     # Load the NetCDF files
-    discharge_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS\Eutrophication CFs/GLOBAL/FUTURE/Discharge/RCP60/MIROC/Discharge_0.5_{year}.nc'
+    discharge_file = f'/data/Discharge/RCP{RCP}/{GCM}/Discharge_{RCP}_{GCM}_{year}.nc'
     discharge_data = xr.open_dataset(discharge_file) #m3/s
     
-    rivervol_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS\Eutrophication CFs/GLOBAL/FUTURE/River volume/RCP60/MIROC/Rivervol_0.5_{year}.nc'
+    rivervol_file = f'/data/Rivervol/RCP{RCP}/{GCM}/Rivervol_{RCP}_{GCM}_{year}.nc'
     rivervol_data = xr.open_dataset(rivervol_file) #m3
-    
+
     # Calculate the advection rate
-    
-    # Calculate the advection rate
-    denominator = lakesvol_data_padded.values + rivervol_data.river_vol
+    denominator = lakesvol + rivervol_data.river_vol
     mask_nan_discharge = np.isnan(discharge_data.dis)
     # Apply the conditions
     adv_rate = np.where(mask_nan_discharge, np.nan, discharge_data.dis / denominator) #s-1
@@ -108,7 +89,7 @@ for year in range(2021, 2100):
     adv_rate_da_float32 = adv_rate_da.astype(np.float32)
     
     # Save the advection rate as NetCDF file
-    adv_nc_file = f'Adv_0.5_{year}.nc'
+    adv_nc_file = f'Adv_{RCP}_{GCM}_{year}.nc'
     adv_rate_da_float32.to_netcdf(adv_nc_file)
     print(f"Data saved to {adv_nc_file}")
 
