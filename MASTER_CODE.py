@@ -129,51 +129,21 @@ for year in range(2021, 2100):
     ret_rate_da_float32 = ret_rate_da.astype(np.float32)
     
     # Save the advection rate as NetCDF file
-    ret_nc_file = f'Ret_0.5_{year}.nc' #d-1
+    ret_nc_file = f'Ret_{RCP}_{GCM}_{year}.nc' #d-1
     ret_rate_da_float32.to_netcdf(ret_nc_file)
     print(f"Data saved to {ret_nc_file}")
 
 
-#%%
 ######################## WATER USE RATES #####################################
-
-
-def read_geotiff_to_xarray(tif_file):
-    """Read GeoTIFF file and convert to xarray DataArray"""
-    with rasterio.open(tif_file) as src:
-        # Read the image data
-        tif_data = src.read(1)
-        # Get the metadata (e.g., coordinate reference system)
-        tif_meta = src.meta
-        
-
-    # Create x and y coordinates corresponding to the shape of the data
-    y_coords = np.arange(tif_data.shape[0])
-    x_coords = np.arange(tif_data.shape[1])
-
-    # Convert the TIF data to xarray DataArray
-    return xr.DataArray(tif_data, dims=('y', 'x'))
-
-# File paths for volume and area datasets
-volume_tif_file = 'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/Lakes/HydroLAKES_Volume_0.5.tif'
-
-# Read volume and area datasets
-lakesvol_data_padded = read_geotiff_to_xarray(volume_tif_file)
-
-# Add additional rows filled with NaN values to create 360x720
-nan_rows = np.full((60, lakesvol_data_padded.sizes['x']), np.nan)
-lakesvol_data_padded = xr.concat([lakesvol_data_padded, xr.DataArray(nan_rows, dims=('y', 'x'))], dim='y') #m3
-
-
 # Iterate over each year
 for year in range(2021, 2100):
     
     # Load the NetCDF files
-    runoff_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/Runoff/RCP26/IPSL/Runoff_0.5_{year}.nc'
-    adv_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/Advection rates/RCP26/IPSL/Adv_0.5_{year}.nc'
-    irr_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/Irrigation water use/RCP26/IPSL/Irr_0.5_{year}.nc'
-    rivervol_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/River volume/RCP26/IPSL/Rivervol_0.5_{year}.nc'
-    discharge_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/Discharge/RCP26/IPSL/Discharge_0.5_{year}.nc'
+    runoff_file = f'/data/Runoff/RCP{RCP}/{GCM}/Runoff_{RCP}_{GCM}_{year}.nc'
+    adv_file = f'/data/Advection rates/RCP{RCP}/{GCM}/Adv_{RCP}_{GCM}_{year}.nc'
+    irr_file = f'/data/Irrigation/RCP{RCP}/{GCM}/Irr_{RCP}_{GCM}_{year}.nc'
+    rivervol_file = f'/data/Rivervol/RCP{RCP}/{GCM}/Rivervol_{RCP}_{GCM}_{year}.nc'
+    discharge_file = f'/data/Discharge/RCP{RCP}/{GCM}/Discharge_{RCP}_{GCM}_{year}.nc'
     
     runoff_data = xr.open_dataset(runoff_file)['qtot'] / 1000  # Convert to m/y
     adv_data = xr.open_dataset(adv_file)['adv_rate']  # s-1
@@ -192,52 +162,26 @@ for year in range(2021, 2100):
     FEdop = edop * (runoff_data ** adop)
     FEsoil = FEdip + FEdop
     
-    # Pad FEsoil array
-    #FEsoil_padded = np.pad(FEsoil, ((0, 60), (0, 0)), mode='constant', constant_values=np.nan)
-    
-    # Create latitude and longitude coordinates from adv_data and rename them to match the specified dimensions
+ 
     lat = adv_data['lat'].rename({'lat': 'lat'})
     lon = adv_data['lon'].rename({'lon': 'lon'})
-   
-    # Save the FEsoil_padded data to a DataArray with the coordinates from adv_data
     FEsoil_da = xr.DataArray(FEsoil, dims=('lat', 'lon'), coords={'lat': lat, 'lon': lon})
-    
-    # Save the FEsoil_padded data to a NetCDF file
-    #file_name_FEsoil = f"FEsoil_0.5_{year}.nc"
-    #FEsoil_padded_da.to_netcdf(file_name_FEsoil)
-    #print(f"FEsoil data for year {year} saved to {file_name_FEsoil}")
     
     # Calculate firr with conditions
     firr = np.where(discharge_data.data == 0,  # Condition: discharge_data.data is zero
                 0,  # If True, set firr to zero
                 irr_data.airrww / (discharge_data))  # If False, perform original calculation
-    # Set firr to NaN where discharge_data.data is NaN
     firr = np.where(np.isnan(discharge_data.data), np.nan, firr)
-    # Set firr to zero where discharge_data.data is less than 1e-04
     firr = np.where(discharge_data.data < 1e-4, 0, firr)
-   
-    # Save the FEsoil_padded data to a DataArray with the coordinates from adv_data
     firr_da = xr.DataArray(firr, dims=('lat', 'lon'), coords={'lat': lat, 'lon': lon})
     
-    # Save the firr data to a NetCDF file
-    #file_name_firr = f"firr_0.5_{year}.nc" 
-    #firr_da.to_netcdf(file_name_firr)
-    #print(f"firr data for year {year} saved to {file_name_firr}")
-    
     kuse = firr_da.data * (1-FEsoil_da.data) * adv_data #s-1
-    
-    # Save the FEsoil_padded data to a DataArray with the coordinates from adv_data
     kuse_da = xr.DataArray(kuse, dims=('lat', 'lon'), coords={'lat': lat, 'lon': lon}, name = 'use_rate')
     
-    # Save the firr data to a NetCDF file
-    output_folder = 'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/Water use rates/RCP26/IPSL'
-    file_name_use = os.path.join(output_folder,f"Use_0.5_{year}.nc") 
-    kuse_da.to_netcdf(file_name_use)
-    print(f"Use data for year {year} saved to {file_name_use}")
-
-
-#%%
-
+    # Save the water use rate as NetCDF file
+    use_nc_file = f'Use_{RCP}_{GCM}_{year}.nc' #s-1
+    kuse_da.to_netcdf(use_nc_file)
+    print(f"Data saved to {use_nc_file}")
 
 #%%
 ###################### FISH RICHNESS DENSITY ##################################
