@@ -15,6 +15,9 @@ import numpy as np
 nc_file = '../data/...nc4'
 data = xr.open_dataset(nc_file, engine='netcdf4', decode_times=False)
 
+area_path = '/data/Land cover'
+area =  xr.open_dataset(area_path)
+
 #SPECIFY CLIMATE CHANGE SCENARIO!!
 #RCP = 26, 60
 RCP = 60
@@ -42,7 +45,7 @@ for year in range(2021, 2100):
     yearly_total_kg_m2 = data_year.mean(dim='time')
     
     # Convert from kg/m2/s to m3/s (assuming 998 kg/m3 is the density conversion factor)
-    yearly_total_m3 = yearly_total_kg_m2 * padded_area / 998
+    yearly_total_m3 = yearly_total_kg_m2 * area / 998
 
     # Save new .nc file
     new_nc_file = f'Irr_{RCP}_{GCM}_{year}.nc'
