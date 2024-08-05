@@ -35,7 +35,7 @@ with rasterio.open(os.path.join(area_path, 'Land_area_0.5.tif')) as src:
 
 for year in range(2021, 2100):
     # Read Discharge data
-    discharge_data = xr.open_dataset(os.path.join(discharge_path, f'Discharge_0.5_{year}.nc'))
+    discharge_data = xr.open_dataset(os.path.join(discharge_path, f'Discharge_{RCP}_{GCM}_{year}.nc'))
     discharge = discharge_data['dis'].values  
     
    
