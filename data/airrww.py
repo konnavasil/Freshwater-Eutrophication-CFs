@@ -11,7 +11,7 @@ import numpy as np
 ############################### WATER IRRIGATION ##############################
 ###############################################################################
 
-# Load the NetCDF file with decode_times=False
+# Load the NetCDF files
 nc_file = '../data/...nc4'
 data = xr.open_dataset(nc_file, engine='netcdf4', decode_times=False)
 
