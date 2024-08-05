@@ -15,6 +15,12 @@ import numpy as np
 nc_file = '../data/...nc4'
 data = xr.open_dataset(nc_file)
 
+#SPECIFY CLIMATE CHANGE SCENARIO!!
+#RCP = 26, 60
+RCP = 26
+#GCM = 'GFDL', 'HADGEM', 'IPSL', 'MIROC'
+GCM = 'GFDL'
+
 # Iterate over each year
 for year in range(2021, 2100):
     # Select data for the current year
