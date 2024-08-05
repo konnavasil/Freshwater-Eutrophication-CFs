@@ -15,6 +15,12 @@ import numpy as np
 nc_file = '../data/...nc4'
 data = xr.open_dataset(nc_file)
 
+#SPECIFY CLIMATE CHANGE SCENARIO!!
+#RCP = 26, 60
+RCP = 26
+#GCM = 'GFDL', 'HADGEM', 'IPSL', 'MIROC'
+GCM = 'GFDL'
+
 # Conversion factor from kg/m²/s to mm/year (assuming 1000 kg/m3 density)
 conversion_factor = 60 * 60 * 24 * 365  # seconds in a year
 
