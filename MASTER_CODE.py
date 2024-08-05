@@ -193,44 +193,43 @@ for year in range(2021, 2100):
                  rivervol_data = xr.open_dataset(rivervol_file) #m3
                 
                  # Load the NetCDF files
-                 fishrichness_file = f'/data/FSR/FSR_{temp}.nc'
+                 fishrichness_file = f'/data/Fish_richness_{temp}.nc'
                  fish_richness = xr.open_dataset(fishrichness_file)
                 
         elif GCM =='HADGEM':
              if year >= 20238:
                  temp = 1.5
                     
-             rivervol_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/River volume/RCP{RCP}/{GCM}/Rivervol_0.5_{year}.nc'
-             rivervol_data = xr.open_dataset(rivervol_file) #m3
+                 rivervol_file = f'/data/Rivervol/RCP{RCP}/{GCM}/Rivervol_{RCP}_{GCM}_{year}.nc'
+                 rivervol_data = xr.open_dataset(rivervol_file) #m3
                 
-             # Load the NetCDF files
-             fishrichness_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/Fish richness/Fish_richness_0.5_{temp}.nc'
-             fish_richness = xr.open_dataset(fishrichness_file)
+                 # Load the NetCDF files
+                 fishrichness_file = f'/data/Fish_richness_{temp}.nc'
+                 fish_richness = xr.open_dataset(fishrichness_file)
                  
         elif GCM =='IPSL':
               temp = 1.5
               if year >= 2033: 
                   temp = 2.0
                       
-              rivervol_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/River volume/RCP{RCP}/{GCM}/Rivervol_0.5_{year}.nc'
-              rivervol_data = xr.open_dataset(rivervol_file) #m3
-                 
-              # Load the NetCDF files
-              fishrichness_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/Fish richness/Fish_richness_0.5_{temp}.nc'
-              fish_richness = xr.open_dataset(fishrichness_file)
+                 rivervol_file = f'/data/Rivervol/RCP{RCP}/{GCM}/Rivervol_{RCP}_{GCM}_{year}.nc'
+                 rivervol_data = xr.open_dataset(rivervol_file) #m3
+                
+                 # Load the NetCDF files
+                 fishrichness_file = f'/data/Fish_richness_{temp}.nc'
+                 fish_richness = xr.open_dataset(fishrichness_file)
                   
         elif GCM =='MIROC':
               temp = 1.5
               if year >= 2035:
                   temp = 2.0
           
-              rivervol_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/River volume/RCP{RCP}/{GCM}/Rivervol_0.5_{year}.nc'
-              rivervol_data = xr.open_dataset(rivervol_file) #m3
-                 
-              # Load the NetCDF files
-              fishrichness_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/Fish richness/Fish_richness_0.5_{temp}.nc'
-              fish_richness = xr.open_dataset(fishrichness_file)         
-
+                 rivervol_file = f'/data/Rivervol/RCP{RCP}/{GCM}/Rivervol_{RCP}_{GCM}_{year}.nc'
+                 rivervol_data = xr.open_dataset(rivervol_file) #m3
+                
+                 # Load the NetCDF files
+                 fishrichness_file = f'/data/Fish_richness_{temp}.nc'
+                 fish_richness = xr.open_dataset(fishrichness_file)
     elif RCP == 60:
         if GCM =='GFDL': 
              if year >= 2052:
@@ -238,12 +237,12 @@ for year in range(2021, 2100):
              if year >= 2073:
                  temp = 2.0
 
-             rivervol_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/River volume/RCP{RCP}/{GCM}/Rivervol_0.5_{year}.nc'
-             rivervol_data = xr.open_dataset(rivervol_file) #m3
+                 rivervol_file = f'/data/Rivervol/RCP{RCP}/{GCM}/Rivervol_{RCP}_{GCM}_{year}.nc'
+                 rivervol_data = xr.open_dataset(rivervol_file) #m3
                 
-             # Load the NetCDF files
-             fishrichness_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/Fish richness/Fish_richness_0.5_{temp}.nc'
-             fish_richness = xr.open_dataset(fishrichness_file)
+                 # Load the NetCDF files
+                 fishrichness_file = f'/data/Fish_richness_{temp}.nc'
+                 fish_richness = xr.open_dataset(fishrichness_file)
                 
         elif GCM =='HADGEM':
              if year >= 2034:
@@ -253,12 +252,12 @@ for year in range(2021, 2100):
              if year >= 2082:
                  temp = 3.2
                     
-             rivervol_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/River volume/RCP{RCP}/{GCM}/Rivervol_0.5_{year}.nc'
-             rivervol_data = xr.open_dataset(rivervol_file) #m3
+                 rivervol_file = f'/data/Rivervol/RCP{RCP}/{GCM}/Rivervol_{RCP}_{GCM}_{year}.nc'
+                 rivervol_data = xr.open_dataset(rivervol_file) #m3
                 
-             # Load the NetCDF files
-             fishrichness_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/Fish richness/Fish_richness_0.5_{temp}.nc'
-             fish_richness = xr.open_dataset(fishrichness_file)
+                 # Load the NetCDF files
+                 fishrichness_file = f'/data/Fish_richness_{temp}.nc'
+                 fish_richness = xr.open_dataset(fishrichness_file)
        
         elif GCM =='IPSL':
               temp = 1.5
@@ -267,12 +266,12 @@ for year in range(2021, 2100):
               if year >= 2078:
                   temp = 3.2
                      
-              rivervol_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/River volume/RCP{RCP}/{GCM}/Rivervol_0.5_{year}.nc'
-              rivervol_data = xr.open_dataset(rivervol_file) #m3
-                 
-              # Load the NetCDF files
-              fishrichness_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/Fish richness/Fish_richness_0.5_{temp}.nc'
-              fish_richness = xr.open_dataset(fishrichness_file)
+                  rivervol_file = f'/data/Rivervol/RCP{RCP}/{GCM}/Rivervol_{RCP}_{GCM}_{year}.nc'
+                 rivervol_data = xr.open_dataset(rivervol_file) #m3
+                
+                 # Load the NetCDF files
+                 fishrichness_file = f'/data/Fish_richness_{temp}.nc'
+                 fish_richness = xr.open_dataset(fishrichness_file)
                   
         elif GCM =='MIROC':
               if year >= 2023:
@@ -282,20 +281,18 @@ for year in range(2021, 2100):
               if year >= 2073:
                   temp = 3.2
                      
-              rivervol_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/River volume/RCP{RCP}/{GCM}/Rivervol_0.5_{year}.nc'
-              rivervol_data = xr.open_dataset(rivervol_file) #m3
-                 
-              # Load the NetCDF files
-              fishrichness_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/Fish richness/Fish_richness_0.5_{temp}.nc'
-              fish_richness = xr.open_dataset(fishrichness_file) 
-                       
+                 rivervol_file = f'/data/Rivervol/RCP{RCP}/{GCM}/Rivervol_{RCP}_{GCM}_{year}.nc'
+                 rivervol_data = xr.open_dataset(rivervol_file) #m3
+                
+                 # Load the NetCDF files
+                 fishrichness_file = f'/data/Fish_richness_{temp}.nc'
+                 fish_richness = xr.open_dataset(fishrichness_file)
            
     # Calculate the FRD
     denominator = lakesvol + rivervol_data.river_vol
     # Check if any values in the denominator are zero or NaN
     mask_zero_nan = np.logical_or(np.isnan(denominator), denominator < 1e-4)
-                   
-                   
+                              
     frd = xr.full_like(denominator, np.nan)
     frd = frd.where(mask_zero_nan, fish_richness.fishrichness.values / denominator)             
 
@@ -309,7 +306,7 @@ for year in range(2021, 2100):
     frd_da_float32 = frd_da.astype(np.float32)
             
     # Save the advection rate as NetCDF file
-    frd_nc_file = f'FRD_0.5_{year}.nc'
+    frd_nc_file = f'FRD_{RCP}_{GCM}_{year}.nc'
     frd_da_float32.to_netcdf(frd_nc_file)
     print(f"Data saved to {frd_nc_file}")
 
