@@ -17,28 +17,22 @@ from osgeo import gdal
 #SPECIFY CLIMATE CHANGE SCENARIO!!
 #RCP = 26, 60
 RCP = 26
-#GCM = 'gfdl', 'hadgem', 'ipsl', 'miroc'
-GCM = 'gfdl'
+#GCM = 'GFDL', 'HADGEM', 'IPSL', 'MIROC'
+GCM = 'GFDL'
 
 
 ############################### RIVER VOLUME #################################  
-
-
 # Add path with raw data
-discharge_path = '/data/Discharge/RCP_{RCP}/{GCM}'
-area_path = '/data/Land cover'
-
-# Read Area data
-with rasterio.open(os.path.join(area_path, 'Land_area_0.5.tif')) as src:
-     area = src.read(1)
-     
+discharge_path = f'/data/Discharge/RCP_{RCP}/{GCM}'
+area_path = '/data/Land.nc'
+area =  xr.open_dataset(area_path)
+land_area = area['land'].data
 
 for year in range(2021, 2100):
     # Read Discharge data
     discharge_data = xr.open_dataset(os.path.join(discharge_path, f'Discharge_{RCP}_{GCM}_{year}.nc'))
     discharge = discharge_data['dis'].values  
-    
-   
+     
     # Constants
     aw = 5.01e-2  # km^-0.56 y^0.52
     bw = 0.52
@@ -49,22 +43,17 @@ for year in range(2021, 2100):
     # Calculate Width, Depth, Length, and River_vol
     Width = aw * ((discharge * 1e-9 / 3.16887646e-8) ** bw)  # km
     Depth = ad * ((discharge * 1e-9 / 3.16887646e-8) ** bd)  # km
-    Length = sb * np.sqrt(area)  # m
+    Length = sb * np.sqrt(land_area)  # m
     
-    # Pad the Length array to match the shape (360, 720)
-    padded_length = np.pad(Length, ((0, 60), (0, 0)), mode='constant', constant_values=np.nan)
-    
-    River_vol = Width * 1000 * Depth * 1000 * padded_length  # m^3
+    River_vol = Width * 1000 * Depth * 1000 * Length  # m^3
     
     # Convert River_vol to xarray DataArray
     river_vol_da = xr.DataArray(River_vol, dims=('lat', 'lon'), name='river_vol')
-    
-    # Add coordinate values if needed (assuming Latitude and Longitude coordinates)
     river_vol_da['lat'] = discharge_data['lat']
     river_vol_da['lon'] = discharge_data['lon']
     
     # Save as NetCDF file
-    river_vol_nc_file = f'Rivervol_0.5_{year}.nc'
+    river_vol_nc_file = f'Rivervol_{RCP}_{GCM}_{year}.nc'
     river_vol_da.to_netcdf(river_vol_nc_file)
 
     print(f"Data saved to {river_vol_nc_file}")
