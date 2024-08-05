@@ -15,6 +15,12 @@ import numpy as np
 nc_file = '../data/...nc4'
 data = xr.open_dataset(nc_file, engine='netcdf4', decode_times=False)
 
+#SPECIFY CLIMATE CHANGE SCENARIO!!
+#RCP = 26, 60
+RCP = 60
+#GCM = 'GFDL', 'HADGEM', 'IPSL', 'MIROC'
+GCM = 'HADGEM'
+
 # Calculate the start and end indices for each year from 2021 to 2099
 start_index = (2021 - 2006) * 12  
 end_index = (2099 - 2006 + 1) * 12 
