@@ -43,14 +43,12 @@ insert_below = new_lats > lats[-1]
 insert_above = new_lats > lats[0]
 insert_below = new_lats < lats[-1]
 
-# Create NaN-filled rows for latitude values outside the original range
 above_data = np.full((sum(insert_above), width), np.nan, dtype=np.float32)
 below_data = np.full((sum(insert_below), width), np.nan, dtype=np.float32)
 
 above_array = xr.DataArray(above_data, dims=('latitude', 'longitude'), coords={'latitude': new_lats[insert_above], 'longitude': lons})
 below_array = xr.DataArray(below_data, dims=('latitude', 'longitude'), coords={'latitude': new_lats[insert_below], 'longitude': lons})
 
-# Concatenate the original array with the NaN-filled rows
 fishbase_array_updated = xr.concat([above_array, fishbase_array, below_array], dim='latitude')
 fishbase = xr.Dataset({'fishrichness': fishbase_array_updated})
 
@@ -86,7 +84,6 @@ for temp in temperatures:
     with rasterio.open(PAF_tif_file) as src2:
         PAF_data = src2.read(1) 
         
-    # Apply the condition to multiply only where both data1 and data2 are >= 0
     result_data = np.where((fishbase_array.data >= 0) & (PAF_data >= 0), fishbase_array.data.astype(np.float64) - (fishbase_array.data.astype(np.float64) * PAF_data.astype(np.float64)), np.nan)
         
     # Create a mask to identify non-NaN values in the result_data
