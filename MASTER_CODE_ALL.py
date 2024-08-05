@@ -21,299 +21,19 @@ RCP = 26
 GCM = 'GFDL'
 
 
-############################### RIVER VOLUME #################################  
 # Add path with raw data
-discharge_path = f'/data/Discharge/RCP{RCP}/{GCM}'
 land_path = '/data/Land.nc'
 land =  xr.open_dataset(land_path)
 land_area = land['land'].data
 
-for year in range(2021, 2100):
-    # Read Discharge data
-    discharge_data = xr.open_dataset(os.path.join(discharge_path, f'Discharge_{RCP}_{GCM}_{year}.nc'))
-    discharge = discharge_data['dis'].values  
-     
-    # Constants
-    aw = 5.01e-2  # km^-0.56 y^0.52
-    bw = 0.52
-    ad = 1.04e-3  # km^-0.11 y^0.37
-    bd = 0.37
-    sb = 2.12
-    
-    # Calculate Width, Depth, Length, and River_vol
-    Width = aw * ((discharge * 1e-9 / 3.16887646e-8) ** bw)  # km
-    Depth = ad * ((discharge * 1e-9 / 3.16887646e-8) ** bd)  # km
-    Length = sb * np.sqrt(land_area)  # m
-    
-    River_vol = Width * 1000 * Depth * 1000 * Length  # m^3
-    
-    # Convert River_vol to xarray DataArray
-    river_vol_da = xr.DataArray(River_vol, dims=('lat', 'lon'), name='river_vol')
-    river_vol_da['lat'] = discharge_data['lat']
-    river_vol_da['lon'] = discharge_data['lon']
-    
-    # Save as NetCDF file
-    river_vol_nc_file = f'Rivervol_{RCP}_{GCM}_{year}.nc'
-    river_vol_da.to_netcdf(river_vol_nc_file)
-
-    print(f"Data saved to {river_vol_nc_file}")
-
-############################# ADVECTION RATES ################################
 volume_path = '/data/Lakesvol.nc'
 volume_data =  xr.open_dataset(volume_path)
 lakesvol = volume_data['lakesvol_data_padded'].data #m3
 
-# Iterate over each year
-for year in range(2021, 2100):
-    
-    # Load the NetCDF files
-    discharge_file = f'/data/Discharge/RCP{RCP}/{GCM}/Discharge_{RCP}_{GCM}_{year}.nc'
-    discharge_data = xr.open_dataset(discharge_file) #m3/s
-    
-    rivervol_file = f'/data/Rivervol/RCP{RCP}/{GCM}/Rivervol_{RCP}_{GCM}_{year}.nc'
-    rivervol_data = xr.open_dataset(rivervol_file) #m3
-
-    # Calculate the advection rate
-    denominator = lakesvol + rivervol_data.river_vol
-    mask_nan_discharge = np.isnan(discharge_data.dis)
-    # Apply the conditions
-    adv_rate = np.where(mask_nan_discharge, np.nan, discharge_data.dis / denominator) #s-1
-    
-    # Convert adv_rate to xarray DataArray
-    adv_rate_da = xr.DataArray(adv_rate, dims=('lat', 'lon'), name='adv_rate')
-    # Add coordinate values if needed (assuming Latitude and Longitude coordinates)
-    adv_rate_da['lat'] = discharge_data['lat']
-    adv_rate_da['lon'] = discharge_data['lon']
-    
-    # Convert the advection rate data to float32
-    adv_rate_da_float32 = adv_rate_da.astype(np.float32)
-    
-    # Save the advection rate as NetCDF file
-    adv_nc_file = f'Adv_{RCP}_{GCM}_{year}.nc'
-    adv_rate_da_float32.to_netcdf(adv_nc_file)
-    print(f"Data saved to {adv_nc_file}")
-
-######################## RETENTION RATES #####################################
 area_path = '/data/Lakesarea.nc'
 area_data =  xr.open_dataset(area_path)
 lakesarea = area_data['lakesarea'].data #m2
 
-# Iterate over each year
-for year in range(2021, 2100):
-    
-    # Load the NetCDF files
-    discharge_file = f'/data/Discharge/RCP{RCP}/{GCM}/Discharge_{RCP}_{GCM}_{year}.nc'
-    discharge_data = xr.open_dataset(discharge_file) #m3/s
-    
-    rivervol_file = f'/data/Rivervol/RCP{RCP}/{GCM}/Rivervol_{RCP}_{GCM}_{year}.nc'
-    rivervol_data = xr.open_dataset(rivervol_file) #m3
-    
-    # Define the conditions and corresponding values
-    condition_1 = discharge_data.dis > 14.2
-    condition_2 = (discharge_data.dis <= 14.2) & (discharge_data.dis > 2.8)
-    
-    value_1 = 0.012
-    value_2 = 0.068
-    value_3 = 0.195
-    
-    # Create a new DataArray based on the conditions
-    kret_riv = xr.where(condition_1, value_1, xr.where(condition_2, value_2, value_3))
-
-    #Calculate retention rate
-    ret_rate = (1 / (rivervol_data.river_vol + lakesvol)) * (rivervol_data.river_vol * kret_riv.values + 0.038 * lakesarea)
-
-    # Convert adv_rate to xarray DataArray
-    ret_rate_da = xr.DataArray(ret_rate, dims=('lat', 'lon'), name='ret_rate')
-    ret_rate_da['lat'] = discharge_data['lat']
-    ret_rate_da['lon'] = discharge_data['lon']
-    ret_rate_da_float32 = ret_rate_da.astype(np.float32)
-    
-    # Save the advection rate as NetCDF file
-    ret_nc_file = f'Ret_{RCP}_{GCM}_{year}.nc' #d-1
-    ret_rate_da_float32.to_netcdf(ret_nc_file)
-    print(f"Data saved to {ret_nc_file}")
-
-
-######################## WATER USE RATES #####################################
-# Iterate over each year
-for year in range(2021, 2100):
-    
-    # Load the NetCDF files
-    runoff_file = f'/data/Runoff/RCP{RCP}/{GCM}/Runoff_{RCP}_{GCM}_{year}.nc'
-    adv_file = f'/data/Advection rates/RCP{RCP}/{GCM}/Adv_{RCP}_{GCM}_{year}.nc'
-    irr_file = f'/data/Irrigation/RCP{RCP}/{GCM}/Irr_{RCP}_{GCM}_{year}.nc'
-    rivervol_file = f'/data/Rivervol/RCP{RCP}/{GCM}/Rivervol_{RCP}_{GCM}_{year}.nc'
-    discharge_file = f'/data/Discharge/RCP{RCP}/{GCM}/Discharge_{RCP}_{GCM}_{year}.nc'
-    
-    runoff_data = xr.open_dataset(runoff_file)['qtot'] / 1000  # Convert to m/y
-    adv_data = xr.open_dataset(adv_file)['adv_rate']  # s-1
-    irr_data = xr.open_dataset(irr_file)  # m3
-    rivervol_data = xr.open_dataset(rivervol_file)['river_vol']  # m3
-    discharge_data = xr.open_dataset(discharge_file)['dis']  # m3/s
-    
-    # Calculate FE values
-    edip = 0.29
-    edop = 0.01
-    adip = 0.85
-    adop = 0.95
-    bdip = 2.00
-    
-    FEdip = edip * 1 / (1 + ((runoff_data / adip) ** (-bdip)))
-    FEdop = edop * (runoff_data ** adop)
-    FEsoil = FEdip + FEdop
-    
- 
-    lat = adv_data['lat'].rename({'lat': 'lat'})
-    lon = adv_data['lon'].rename({'lon': 'lon'})
-    FEsoil_da = xr.DataArray(FEsoil, dims=('lat', 'lon'), coords={'lat': lat, 'lon': lon})
-    
-    # Calculate firr with conditions
-    firr = np.where(discharge_data.data == 0,  # Condition: discharge_data.data is zero
-                0,  # If True, set firr to zero
-                irr_data.airrww / (discharge_data))  # If False, perform original calculation
-    firr = np.where(np.isnan(discharge_data.data), np.nan, firr)
-    firr = np.where(discharge_data.data < 1e-4, 0, firr)
-    firr_da = xr.DataArray(firr, dims=('lat', 'lon'), coords={'lat': lat, 'lon': lon})
-    
-    kuse = firr_da.data * (1-FEsoil_da.data) * adv_data #s-1
-    kuse_da = xr.DataArray(kuse, dims=('lat', 'lon'), coords={'lat': lat, 'lon': lon}, name = 'use_rate')
-    
-    # Save the water use rate as NetCDF file
-    use_nc_file = f'Use_{RCP}_{GCM}_{year}.nc' #s-1
-    kuse_da.to_netcdf(use_nc_file)
-    print(f"Data saved to {use_nc_file}")
-
-###################### FISH RICHNESS DENSITY ##################################
-# Iterate over each year
-for year in range(2021, 2100):
-    temp = 0.0
-    if RCP == 26:
-        if GCM =='GFDL':    
-                 rivervol_file = f'/data/Rivervol/RCP{RCP}/{GCM}/Rivervol_{RCP}_{GCM}_{year}.nc'
-                 rivervol_data = xr.open_dataset(rivervol_file) #m3
-                
-                 # Load the NetCDF files
-                 fishrichness_file = f'/data/Fish_richness_{temp}.nc'
-                 fish_richness = xr.open_dataset(fishrichness_file)
-                
-        elif GCM =='HADGEM':
-             if year >= 20238:
-                 temp = 1.5
-                    
-                 rivervol_file = f'/data/Rivervol/RCP{RCP}/{GCM}/Rivervol_{RCP}_{GCM}_{year}.nc'
-                 rivervol_data = xr.open_dataset(rivervol_file) #m3
-                
-                 # Load the NetCDF files
-                 fishrichness_file = f'/data/Fish_richness_{temp}.nc'
-                 fish_richness = xr.open_dataset(fishrichness_file)
-                 
-        elif GCM =='IPSL':
-              temp = 1.5
-              if year >= 2033: 
-                  temp = 2.0
-                      
-                 rivervol_file = f'/data/Rivervol/RCP{RCP}/{GCM}/Rivervol_{RCP}_{GCM}_{year}.nc'
-                 rivervol_data = xr.open_dataset(rivervol_file) #m3
-                
-                 # Load the NetCDF files
-                 fishrichness_file = f'/data/Fish_richness_{temp}.nc'
-                 fish_richness = xr.open_dataset(fishrichness_file)
-                  
-        elif GCM =='MIROC':
-              temp = 1.5
-              if year >= 2035:
-                  temp = 2.0
-          
-                 rivervol_file = f'/data/Rivervol/RCP{RCP}/{GCM}/Rivervol_{RCP}_{GCM}_{year}.nc'
-                 rivervol_data = xr.open_dataset(rivervol_file) #m3
-                
-                 # Load the NetCDF files
-                 fishrichness_file = f'/data/Fish_richness_{temp}.nc'
-                 fish_richness = xr.open_dataset(fishrichness_file)
-    elif RCP == 60:
-        if GCM =='GFDL': 
-             if year >= 2052:
-                 temp = 1.5
-             if year >= 2073:
-                 temp = 2.0
-
-                 rivervol_file = f'/data/Rivervol/RCP{RCP}/{GCM}/Rivervol_{RCP}_{GCM}_{year}.nc'
-                 rivervol_data = xr.open_dataset(rivervol_file) #m3
-                
-                 # Load the NetCDF files
-                 fishrichness_file = f'/data/Fish_richness_{temp}.nc'
-                 fish_richness = xr.open_dataset(fishrichness_file)
-                
-        elif GCM =='HADGEM':
-             if year >= 2034:
-                 temp = 1.5
-             if year >= 2048:
-                 temp = 2.0
-             if year >= 2082:
-                 temp = 3.2
-                    
-                 rivervol_file = f'/data/Rivervol/RCP{RCP}/{GCM}/Rivervol_{RCP}_{GCM}_{year}.nc'
-                 rivervol_data = xr.open_dataset(rivervol_file) #m3
-                
-                 # Load the NetCDF files
-                 fishrichness_file = f'/data/Fish_richness_{temp}.nc'
-                 fish_richness = xr.open_dataset(fishrichness_file)
-       
-        elif GCM =='IPSL':
-              temp = 1.5
-              if year >= 2032:
-                  temp = 2.0
-              if year >= 2078:
-                  temp = 3.2
-                     
-                  rivervol_file = f'/data/Rivervol/RCP{RCP}/{GCM}/Rivervol_{RCP}_{GCM}_{year}.nc'
-                 rivervol_data = xr.open_dataset(rivervol_file) #m3
-                
-                 # Load the NetCDF files
-                 fishrichness_file = f'/data/Fish_richness_{temp}.nc'
-                 fish_richness = xr.open_dataset(fishrichness_file)
-                  
-        elif GCM =='MIROC':
-              if year >= 2023:
-                  temp = 1.5
-              if year >= 2039:
-                  temp = 2.0
-              if year >= 2073:
-                  temp = 3.2
-                     
-                 rivervol_file = f'/data/Rivervol/RCP{RCP}/{GCM}/Rivervol_{RCP}_{GCM}_{year}.nc'
-                 rivervol_data = xr.open_dataset(rivervol_file) #m3
-                
-                 # Load the NetCDF files
-                 fishrichness_file = f'/data/Fish_richness_{temp}.nc'
-                 fish_richness = xr.open_dataset(fishrichness_file)
-           
-    # Calculate the FRD
-    denominator = lakesvol + rivervol_data.river_vol
-    # Check if any values in the denominator are zero or NaN
-    mask_zero_nan = np.logical_or(np.isnan(denominator), denominator < 1e-4)
-                              
-    frd = xr.full_like(denominator, np.nan)
-    frd = frd.where(mask_zero_nan, fish_richness.fishrichness.values / denominator)             
-
-    # Convert frd to xarray DataArray
-    frd_da = xr.DataArray(frd, dims=('lat', 'lon'), name='frd')
-    # Add coordinate values if needed (assuming Latitude and Longitude coordinates)
-    frd_da['lat'] = rivervol_data.lat
-    frd_da['lon'] = rivervol_data.lon
-            
-    # Convert the advection rate data to float32
-    frd_da_float32 = frd_da.astype(np.float32)
-            
-    # Save the advection rate as NetCDF file
-    frd_nc_file = f'FRD_{RCP}_{GCM}_{year}.nc'
-    frd_da_float32.to_netcdf(frd_nc_file)
-    print(f"Data saved to {frd_nc_file}")
-
-#%%
-######################### Effect factor ################################
-
-################### Linear effect factor calculation #########################
 # Open the TIF file using rasterio
 with rasterio.open('C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/Climate regions/Climate_0.5.tif') as src:
     # Read the image data
@@ -347,37 +67,157 @@ LEF_river = xr.where(climate_data_padded == 1, 777.98,
 #Define total fish richness in the world
 FR_global = 11425 #LIMITATION: CANT ESTIMATE HOW IT CHANGES OVER TIME
 
-# Iterate over each year
-for year in range(2021, 2100): 
-    # Load the NetCDF files
-    FRD_file = f'/data/FRD_{RCP}_{GCM}_{year}.nc'
-    FRD = xr.open_dataset(FRD_file)
+for year in range(2021, 2100):
+   
+    ############################### RIVER VOLUME #################################  
+    discharge_file = f'/data/Discharge/RCP{RCP}/{GCM}/Discharge_{RCP}_{GCM}_{year}.nc'
+    discharge_data = xr.open_dataset(discharge_file) #m3/s 
+     
+    # Constants
+    aw = 5.01e-2  # km^-0.56 y^0.52
+    bw = 0.52
+    ad = 1.04e-3  # km^-0.11 y^0.37
+    bd = 0.37
+    sb = 2.12
     
-    #Calculate effect factor
-    EF_lake = FRD.frd.data * LEF_lake.data / FR_global
-    EF_river = FRD.frd.data * LEF_river.data / FR_global
+    # Calculate Width, Depth, Length, and River_vol
+    Width = aw * ((discharge_data.dis * 1e-9 / 3.16887646e-8) ** bw)  # km
+    Depth = ad * ((discharge_data.dis * 1e-9 / 3.16887646e-8) ** bd)  # km
+    Length = sb * np.sqrt(land_area)  # m
     
-    # Convert EF to xarray DataArray
-    EF_lake_da = xr.DataArray(EF_lake, dims=('lat', 'lon'), name='EF_lake')
-    EF_river_da = xr.DataArray(EF_river, dims=('lat', 'lon'), name='EF_river')
+    River_vol = Width * 1000 * Depth * 1000 * Length  # m^3
     
-    # Add coordinate values if needed (assuming Latitude and Longitude coordinates)
-    EF_lake_da['lat'] = FRD.lat
-    EF_lake_da['lon'] = FRD.lon
+############################# ADVECTION RATES ################################
+    # Calculate the advection rate
+    denominator = lakesvol + River_vol
+    mask_nan_discharge = np.isnan(discharge_data.dis)
+    # Apply the conditions
+    adv_rate = np.where(mask_nan_discharge, np.nan, discharge_data.dis / denominator) #s-1
     
-    EF_river_da['lat'] = FRD.lat
-    EF_river_da['lon'] = FRD.lon
+######################## RETENTION RATES #####################################        
+    # Define the conditions and corresponding values
+    condition_1 = discharge_data.dis > 14.2
+    condition_2 = (discharge_data.dis <= 14.2) & (discharge_data.dis > 2.8)
     
-    # Convert the effect rates data to float32
-    EF_lake_da_float32 = EF_lake_da.astype(np.float32)
-    EF_river_da_float32 = EF_river_da.astype(np.float32)
+    value_1 = 0.012
+    value_2 = 0.068
+    value_3 = 0.195
     
-    #Calculate freshwater fraction by type in each cell
-    #Load river volume data
-    rivervol_file = f'/data/Rivervol/RCP{RCP}/{GCM}/Rivervol_{RCP}_{GCM}_{year}.nc'
-    rivervol_data = xr.open_dataset(rivervol_file) #m3
+    # Create a new DataArray based on the conditions
+    kret_riv = xr.where(condition_1, value_1, xr.where(condition_2, value_2, value_3))
 
-    denominator = lakesvol + rivervol_data.river_vol
+    #Calculate retention rate
+    ret_rate = (1 / (River_vol + lakesvol)) * (River_vol * kret_riv.values + 0.038 * lakesarea)
+
+######################## WATER USE RATES #####################################
+    # Load the NetCDF files
+    runoff_file = f'/data/Runoff/RCP{RCP}/{GCM}/Runoff_{RCP}_{GCM}_{year}.nc'
+    irr_file = f'/data/Irrigation/RCP{RCP}/{GCM}/Irr_{RCP}_{GCM}_{year}.nc'
+    
+    runoff_data = xr.open_dataset(runoff_file)['qtot'] / 1000  # Convert to m/y
+    irr_data = xr.open_dataset(irr_file)  # m3
+    
+    # Calculate FE values
+    edip = 0.29
+    edop = 0.01
+    adip = 0.85
+    adop = 0.95
+    bdip = 2.00
+    
+    FEdip = edip * 1 / (1 + ((runoff_data / adip) ** (-bdip)))
+    FEdop = edop * (runoff_data ** adop)
+    FEsoil = FEdip + FEdop
+    
+    # Calculate firr with conditions
+    firr = np.where(discharge_data.dis == 0,  # Condition: discharge_data.data is zero
+                0,  # If True, set firr to zero
+                irr_data.airrww / (discharge_data.dis))  # If False, perform original calculation
+    firr = np.where(np.isnan(discharge_data.dis), np.nan, firr)
+    firr = np.where(discharge_data.dis < 1e-4, 0, firr)
+    
+    kuse = firr_da.data * (1-FEsoil) * adv_rate #s-1
+
+###################### FISH RICHNESS DENSITY ##################################
+    temp = 0.0
+    if RCP == 26:
+        if GCM =='GFDL':    
+                 fishrichness_file = f'/data/Fish_richness_{temp}.nc'
+                 fish_richness = xr.open_dataset(fishrichness_file)
+                
+        elif GCM =='HADGEM':
+             if year >= 20238:
+                 temp = 1.5
+                 fishrichness_file = f'/data/Fish_richness_{temp}.nc'
+                 fish_richness = xr.open_dataset(fishrichness_file)
+                 
+        elif GCM =='IPSL':
+              temp = 1.5
+              if year >= 2033: 
+                 temp = 2.0
+                 fishrichness_file = f'/data/Fish_richness_{temp}.nc'
+                 fish_richness = xr.open_dataset(fishrichness_file)
+                  
+        elif GCM =='MIROC':
+              temp = 1.5
+              if year >= 2035:
+                 temp = 2.0
+                 fishrichness_file = f'/data/Fish_richness_{temp}.nc'
+                 fish_richness = xr.open_dataset(fishrichness_file)
+    elif RCP == 60:
+        if GCM =='GFDL': 
+             if year >= 2052:
+                 temp = 1.5
+             if year >= 2073:
+                 temp = 2.0
+                 fishrichness_file = f'/data/Fish_richness_{temp}.nc'
+                 fish_richness = xr.open_dataset(fishrichness_file)
+                
+        elif GCM =='HADGEM':
+             if year >= 2034:
+                 temp = 1.5
+             if year >= 2048:
+                 temp = 2.0
+             if year >= 2082:
+                 temp = 3.2
+                 fishrichness_file = f'/data/Fish_richness_{temp}.nc'
+                 fish_richness = xr.open_dataset(fishrichness_file)
+       
+        elif GCM =='IPSL':
+              temp = 1.5
+              if year >= 2032:
+                 temp = 2.0
+              if year >= 2078:
+                 temp = 3.2
+                 fishrichness_file = f'/data/Fish_richness_{temp}.nc'
+                 fish_richness = xr.open_dataset(fishrichness_file)
+                  
+        elif GCM =='MIROC':
+              if year >= 2023:
+                 temp = 1.5
+              if year >= 2039:
+                 temp = 2.0
+              if year >= 2073:
+                 temp = 3.2
+                 fishrichness_file = f'/data/Fish_richness_{temp}.nc'
+                 fish_richness = xr.open_dataset(fishrichness_file)
+           
+    # Calculate the FRD
+    denominator = lakesvol + River_vol
+    # Check if any values in the denominator are zero or NaN
+    mask_zero_nan = np.logical_or(np.isnan(denominator), denominator < 1e-4)
+                              
+    frd = xr.full_like(denominator, np.nan)
+    frd = frd.where(mask_zero_nan, fish_richness.fishrichness.values / denominator)             
+
+######################### Effect factor ################################
+
+################### Linear effect factor calculation #########################
+   
+    #Calculate effect factor
+    EF_lake = frd * LEF_lake.data / FR_global
+    EF_river = frd * LEF_river.data / FR_global
+    
+    denominator = lakesvol + River_vol
     mask_zero_nan = np.logical_or(np.isnan(denominator), denominator < 1e-4)
     
     # Initialize fraction arrays with NaNs
@@ -389,20 +229,6 @@ for year in range(2021, 2100):
     fraction_lake = fraction_lake.where(mask_zero_nan, lakesvol / denominator)
     fraction_river = fraction_river.where(mask_zero_nan, 1 - fraction_lake)
                   
-    # Convert frd to xarray DataArray
-    fraction_lake_da = xr.DataArray(fraction_lake, dims=('lat', 'lon'), name='fraction_lake')
-    fraction_river_da = xr.DataArray(fraction_river, dims=('lat', 'lon'), name='fraction_river')
-    
-    # Add coordinate values if needed (assuming Latitude and Longitude coordinates)
-    fraction_lake_da['lat'] = rivervol_data.lat
-    fraction_lake_da['lon'] = rivervol_data.lon
-    fraction_river_da['lat'] = rivervol_data.lat
-    fraction_river_da['lon'] = rivervol_data.lon
-    
-    # Convert the data to float32
-    fraction_lake_da_float32 = fraction_lake_da.astype(np.float32)
-    fraction_river_da_float32 = fraction_river_da.astype(np.float32)
-    
     #Calculate final effect factors
     effect_factor = fraction_lake * EF_lake + fraction_river * EF_river
     # Convert effect_factor to xarray DataArray
