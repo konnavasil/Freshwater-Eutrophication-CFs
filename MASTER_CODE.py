@@ -313,7 +313,6 @@ for year in range(2021, 2100):
 #%%
 ######################### Effect factor ################################
 
-
 ################### Linear effect factor calculation #########################
 # Open the TIF file using rasterio
 with rasterio.open('C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/Climate regions/Climate_0.5.tif') as src:
@@ -348,29 +347,10 @@ LEF_river = xr.where(climate_data_padded == 1, 777.98,
 #Define total fish richness in the world
 FR_global = 11425 #LIMITATION: CANT ESTIMATE HOW IT CHANGES OVER TIME
 
-# Open the lakes volume TIF file using rasterio
-with rasterio.open('C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/Lakes/HydroLAKES_Volume_0.5.tif') as src:
-    # Read the image data
-    tif_data = src.read(1)
-    # Get the metadata (e.g., coordinate reference system)
-    tif_meta = src.meta
-
-# Create x and y coordinates corresponding to the shape of the data
-y_coords = np.arange(tif_data.shape[0])
-x_coords = np.arange(tif_data.shape[1])
-
-# Convert the TIF data to xarray DataArray
-lakesvol_data = xr.DataArray(tif_data, dims=('y', 'x'))
-
-# Add additional rows filled with NaN values to create 360x720
-nan_rows = np.full((60, lakesvol_data.sizes['x']), np.nan)
-lakesvol_data_padded = xr.concat([lakesvol_data, xr.DataArray(nan_rows, dims=('y', 'x'))], dim='y') #m3
-
-
 # Iterate over each year
 for year in range(2021, 2100): 
     # Load the NetCDF files
-    FRD_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/Fish richness density/RCP60/MIROC/FRD_0.5_{year}.nc'
+    FRD_file = f'/data/FRD_{RCP}_{GCM}_{year}.nc'
     FRD = xr.open_dataset(FRD_file)
     
     #Calculate effect factor
@@ -392,23 +372,12 @@ for year in range(2021, 2100):
     EF_lake_da_float32 = EF_lake_da.astype(np.float32)
     EF_river_da_float32 = EF_river_da.astype(np.float32)
     
-    # Save the effect rates as NetCDF file
-    #EF_lake_nc_file = f'EF_lake_0.5_{year}.nc'
-    #EF_lake_da_float32.to_netcdf(EF_lake_nc_file)
-    #print(f"Data saved to {EF_lake_nc_file}")
-    
-    #EF_river_nc_file = f'EF_river_0.5_{year}.nc'
-    #EF_river_da_float32.to_netcdf(EF_river_nc_file)
-    #print(f"Data saved to {EF_river_nc_file}")
-
-    
     #Calculate freshwater fraction by type in each cell
     #Load river volume data
-    rivervol_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/River volume/RCP60/MIROC/Rivervol_0.5_{year}.nc'
+    rivervol_file = f'/data/Rivervol/RCP{RCP}/{GCM}/Rivervol_{RCP}_{GCM}_{year}.nc'
     rivervol_data = xr.open_dataset(rivervol_file) #m3
-    
-    denominator = lakesvol_data_padded.values + rivervol_data.river_vol
-    # Check if any values in the denominator are zero or NaN
+
+    denominator = lakesvol + rivervol_data.river_vol
     mask_zero_nan = np.logical_or(np.isnan(denominator), denominator < 1e-4)
     
     # Initialize fraction arrays with NaNs
@@ -417,7 +386,7 @@ for year in range(2021, 2100):
     # Perform the division for non-zero and non-NaN values
     valid_indices = ~mask_zero_nan
     
-    fraction_lake = fraction_lake.where(mask_zero_nan, lakesvol_data_padded.values / denominator)
+    fraction_lake = fraction_lake.where(mask_zero_nan, lakesvol / denominator)
     fraction_river = fraction_river.where(mask_zero_nan, 1 - fraction_lake)
                   
     # Convert frd to xarray DataArray
@@ -433,14 +402,6 @@ for year in range(2021, 2100):
     # Convert the data to float32
     fraction_lake_da_float32 = fraction_lake_da.astype(np.float32)
     fraction_river_da_float32 = fraction_river_da.astype(np.float32)
-    
-    # Save the fractions as NetCDF files
-    #fraction_lake_nc_file = f'Fraction_lake_0.5_{year}.nc'
-    #fraction_lake_da_float32.to_netcdf(fraction_lake_nc_file)
-   # print(f"Data saved to {fraction_lake_nc_file}")
-    #fraction_river_nc_file = f'Fraction_river_0.5_{year}.nc'
-    #fraction_river_da_float32.to_netcdf(fraction_river_nc_file)
-    #print(f"Data saved to {fraction_river_nc_file}")
     
     #Calculate final effect factors
     effect_factor = fraction_lake * EF_lake + fraction_river * EF_river
