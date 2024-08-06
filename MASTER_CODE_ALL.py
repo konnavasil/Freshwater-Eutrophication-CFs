@@ -135,7 +135,7 @@ for year in range(2021, 2100):
     firr = np.where(np.isnan(discharge_data.dis), np.nan, firr)
     firr = np.where(discharge_data.dis < 1e-4, 0, firr)
     
-    kuse = firr_da.data * (1-FEsoil) * adv_rate #s-1
+    kuse = firr * (1-FEsoil) * adv_rate #s-1
 
 ###################### FISH RICHNESS DENSITY ##################################
     temp = 0.0
