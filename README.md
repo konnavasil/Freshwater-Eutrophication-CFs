@@ -46,4 +46,4 @@ Results can be generated for four RCP-GCM scenarios:
 The user should define the scenario at the beginning of the code.
 All characterization factors are saved as .nc files.
 Intermediate results, such as advection, retantion, water use rates, can also be saved as separate files.
-Results are saved as '[Variable]_[RCP]_[GCM]__[year].nc'
+Results are saved as 'Variable_RCP_GCM__year.nc'
