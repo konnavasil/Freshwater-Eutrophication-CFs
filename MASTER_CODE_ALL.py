@@ -234,8 +234,8 @@ for year in range(2021, 2100):
     # Convert effect_factor to xarray DataArray
     effect_factor_da = xr.DataArray(effect_factor, dims=('lat', 'lon'), name='effect_factor')
     # Add coordinate values if needed (assuming Latitude and Longitude coordinates)
-    effect_factor_da['lat'] = rivervol_data.lat
-    effect_factor_da['lon'] = rivervol_data.lon
+    effect_factor_da['lat'] = discharge_data.lat
+    effect_factor_da['lon'] = discharge_data.lon
     
     # Convert the advection rate data to float32
     effect_factor_da_float32 = effect_factor_da.astype(np.float32)
