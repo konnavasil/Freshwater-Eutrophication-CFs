@@ -99,6 +99,16 @@ for year in range(2021, 2100):
     
     River_vol = Width * 1000 * Depth * 1000 * Length  # m^3
     
+    # Convert River_vol to xarray DataArray
+    #River_vol_da = xr.DataArray(River_vol, dims=('lat', 'lon'), name='rivervol')
+    #River_vol_da['lat'] = discharge_data.lat
+    #River_vol_da['lon'] = discharge_data.lon
+       
+    # Save the river volume as NetCDF file
+    #River_vol_da_nc_file = f'Rivervol_{RCP}_{GCM}_{year}.nc'
+    #River_vol_da.to_netcdf(River_vol_da_nc_file)
+    #print(f"Data saved to {River_vol_da_nc_file}")
+    
     ###############################################################################
     ############################## ADVECTION RATES ################################
     ###############################################################################
@@ -107,6 +117,16 @@ for year in range(2021, 2100):
     mask_nan_discharge = np.isnan(discharge_data.dis)
     # Apply the conditions
     adv_rate = np.where(mask_nan_discharge, np.nan, discharge_data.dis / denominator) #s-1
+
+    # Convert adv_rate to xarray DataArray
+    #adv_rate_da = xr.DataArray(adv_rate, dims=('lat', 'lon'), name='adv_rate')
+    #adv_rate_da['lat'] = discharge_data.lat
+    #adv_rate_da['lon'] = discharge_data.lon
+       
+    # Save the advection rates as NetCDF file
+    #adv_rate_da_nc_file = f'adv_rate_{RCP}_{GCM}_{year}.nc'
+    #adv_rate_da.to_netcdf(adv_rate_da_nc_file)
+    #print(f"Data saved to {adv_rate_da_nc_file}")
     
     ###############################################################################
     ############################## RETENTION RATES ################################
@@ -124,6 +144,16 @@ for year in range(2021, 2100):
 
     #Calculate retention rate
     ret_rate = (1 / (River_vol + lakesvol)) * (River_vol * kret_riv.values + 0.038 * lakesarea)
+    
+    # Convert ret_rate to xarray DataArray
+    #ret_rate_da = xr.DataArray(ret_rate, dims=('lat', 'lon'), name='ret_rate')
+    #ret_rate_da['lat'] = discharge_data.lat
+    #ret_rate_da['lon'] = discharge_data.lon
+       
+    # Save the retention rates as NetCDF file
+    #ret_rate_da_nc_file = f'ret_rate_{RCP}_{GCM}_{year}.nc'
+    #ret_rate_da.to_netcdf(ret_rate_da_nc_file)
+    #print(f"Data saved to {ret_rate_da_nc_file}")
 
     ###############################################################################
     ############################## WATER USE RATES ################################
@@ -154,6 +184,16 @@ for year in range(2021, 2100):
     firr = np.where(discharge_data.dis < 1e-4, 0, firr)
     
     use_rate = firr * (1-FEsoil) * adv_rate #s-1
+    
+    # Convert use_rate to xarray DataArray
+    #use_rate_da = xr.DataArray(use_rate, dims=('lat', 'lon'), name='use_rate')
+    #use_rate_da['lat'] = discharge_data.lat
+    #use_rate_da['lon'] = discharge_data.lon
+       
+    # Save the water use rates as NetCDF file
+    #use_rate_da_nc_file = f'use_rate_{RCP}_{GCM}_{year}.nc'
+    #use_rate_da.to_netcdf(use_rate_da_nc_file)
+    #print(f"Data saved to {use_rate_da_nc_file}")
 
     ###############################################################################
     ########################### FISH RICHNESS DENSITY #############################
@@ -227,7 +267,17 @@ for year in range(2021, 2100):
     mask_zero_nan = np.logical_or(np.isnan(denominator), denominator < 1e-4)
                               
     frd = xr.full_like(denominator, np.nan)
-    frd = frd.where(mask_zero_nan, fish_richness.fishrichness.values / denominator)             
+    frd = frd.where(mask_zero_nan, fish_richness.fishrichness.values / denominator)
+    
+    # Convert frd to xarray DataArray
+    #frd_da = xr.DataArray(frd, dims=('lat', 'lon'), name='frd')
+    #frd_da['lat'] = discharge_data.lat
+    #frd_da['lon'] = discharge_data.lon
+       
+    # Save the fish richness density as NetCDF file
+    #frd_da_nc_file = f'frd_{RCP}_{GCM}_{year}.nc'
+    #frd_da.to_netcdf(frd_da_nc_file)
+    #print(f"Data saved to {frd_da_nc_file}")
 
     ###############################################################################
     ############################### EFFECT FACTORS ################################
@@ -245,6 +295,16 @@ for year in range(2021, 2100):
                   
     #Calculate final effect factors
     effect_factor = fraction_lake * EF_lake + fraction_river * EF_river
+    
+    # Convert effect_factor to xarray DataArray
+    #effect_factor_da = xr.DataArray(effect_factor, dims=('lat', 'lon'), name='effect_factor')
+    #effect_factor_da['lat'] = discharge_data.lat
+    #effect_factor_da['lon'] = discharge_data.lon
+       
+    # Save the fish richness density as NetCDF file
+    #effect_factor_da_nc_file = f'effect_factor_{RCP}_{GCM}_{year}.nc'
+    #effect_factor_da.to_netcdf(effect_factor_da_nc_file)
+    #print(f"Data saved to {effect_factor_da_nc_file}")
 
     ###############################################################################
     ########################## CHARACTERIZATION FACTORS ###########################
@@ -338,10 +398,10 @@ for year in range(2021, 2100):
         
     # Convert CF from days to years
     CF /= 365
-    # Convert effect_factor to xarray DataArray
+    # Convert CF to xarray DataArray
     CF_da = xr.DataArray(CF, dims=('lat', 'lon'), name='CF')
-    CF_da['latitude'] = discharge_data.lat
-    CF_da['longitude'] = discharge_data.lon
+    CF_da['lat'] = discharge_data.lat
+    CF_da['lon'] = discharge_data.lon
         
     # Save the characterization factors as NetCDF file
     CF_nc_file = f'CF_{RCP}_{GCM}_{year}.nc'
