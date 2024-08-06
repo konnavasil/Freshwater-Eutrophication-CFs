@@ -77,7 +77,7 @@ num_i, num_j = FD_data.shape
 ############################ DATA PRE-PROCESSING ##############################
 ###############################################################################
 
-############################ RIVER DISCHARGE DATA ################################
+############################ RIVER DISCHARGE DATA #############################
 # Load the .nc4 file
 nc_file = '../data/...nc4'
 data = xr.open_dataset(nc_file)
@@ -119,12 +119,11 @@ for year in range(2021, 2100):
     yearly_avg.to_netcdf(new_nc_file) #mm/year
     print(f"Annual runoff data saved to {new_nc_file}")
 
-############################### WATER IRRIGATION ##############################
+############################### WATER IRRIGATION ############################
 # Load the NetCDF files
 nc_file = '../data/...nc4'
 data = xr.open_dataset(nc_file, engine='netcdf4', decode_times=False)
 
-# Calculate the start and end indices for each year from 2021 to 2099
 start_index = (2021 - 2006) * 12  
 end_index = (2099 - 2006 + 1) * 12 
 
@@ -144,7 +143,7 @@ for year in range(2021, 2100):
     # Calculate annual average
     yearly_total_kg_m2 = data_year.mean(dim='time')
     
-    # Convert from kg/m2/s to m3/s (assuming 998 kg/m3 is the density conversion factor)
+    # Unit conversion
     yearly_total_m3 = yearly_total_kg_m2 * land_area / 998
 
     # Save new .nc file
@@ -177,7 +176,6 @@ lats = np.linspace(max_y - abs(y_res) / 2, min_y + abs(y_res) / 2, height).round
 fishbase_array = xr.DataArray(fishbase_data, dims=('latitude', 'longitude'), coords={'latitude': lats, 'longitude': lons})
 fishbase_array.data[fishbase_array.data < 0] = np.nan
 
-# Calculate new latitude values covering -90 to 90
 new_lats = np.linspace(89.9583, -89.9583, 2160, dtype=np.float32)
 insert_above = new_lats < lats[0]
 insert_below = new_lats > lats[-1]
@@ -245,7 +243,6 @@ for temp in temperatures:
     above_array = xr.DataArray(above_data, dims=('latitude', 'longitude'), coords={'latitude': new_lats[insert_above], 'longitude': lons})
     below_array = xr.DataArray(below_data, dims=('latitude', 'longitude'), coords={'latitude': new_lats[insert_below], 'longitude': lons})
     
-    # Concatenate the original array with the NaN-filled rows
     fish_richness_array_updated = xr.concat([above_array, fish_richness_array, below_array], dim='latitude')
     fishrichness = xr.Dataset({'fishrichness': fish_richness_array_updated})
 
