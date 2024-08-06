@@ -20,36 +20,35 @@ RCP = 26
 #GCM = 'GFDL', 'HADGEM', 'IPSL', 'MIROC'
 GCM = 'GFDL'
 
+###############################################################################
+############################### LOAD RAW DATA #################################
+###############################################################################
 
-# Add path with raw data
+# Load land area (m2)
 land_path = '/data/Land.nc'
 land =  xr.open_dataset(land_path)
 land_area = land['land'].data
 
+# Load lakes/reservoirs volume (m3)
 volume_path = '/data/Lakesvol.nc'
 volume_data =  xr.open_dataset(volume_path)
-lakesvol = volume_data['lakesvol_data_padded'].data #m3
+lakesvol = volume_data['lakesvol_data_padded'].data 
 
+# Load lakes/reservoirs area (m2)
 area_path = '/data/Lakesarea.nc'
 area_data =  xr.open_dataset(area_path)
-lakesarea = area_data['lakesarea'].data #m2
+lakesarea = area_data['lakesarea'].data 
 
-# Open the TIF file using rasterio
+# Load climate regions
 with rasterio.open('/data/Climate_0.5.tif') as src:
-    # Read the image data
     tif_data = src.read(1)
-    # Get the metadata (e.g., coordinate reference system)
     tif_meta = src.meta
 
-# Create x and y coordinates corresponding to the shape of the data
 y_coords = np.arange(tif_data.shape[0])
 x_coords = np.arange(tif_data.shape[1])
-
-# Convert the TIF data to xarray DataArray
 climate_data = xr.DataArray(tif_data, dims=('y', 'x'))
 
 # 1: tropical; 2: temperate; 3: cold; 4: xeric
-# Add additional rows filled with NaN values to create 360x720
 nan_rows = np.full((60, climate_data.sizes['x']), np.nan)
 climate_data_padded = xr.concat([climate_data, xr.DataArray(nan_rows, dims=('y', 'x'))], dim='y') 
 
@@ -65,28 +64,24 @@ LEF_river = xr.where(climate_data_padded == 1, 777.98,
               xr.where(climate_data_padded == 4, 777.98, np.nan))))
 
 #Define total fish richness in the world
-FR_global = 11425 #LIMITATION: CANT ESTIMATE HOW IT CHANGES OVER TIME
+FR_global = 11425 
 
-# Open the ASCII grid file
+# Load flow direction
 with rasterio.open('/data/g_network.asc') as src:
-     # Read the image data
      tif_data = src.read(1)
-     # Get the metadata (e.g., coordinate reference system)
      tif_meta = src.meta
  
-# Create x and y coordinates corresponding to the shape of the data
 y_coords = np.arange(tif_data.shape[0])
 x_coords = np.arange(tif_data.shape[1])
- 
-# Convert the TIF data to xarray DataArray
 FD_data = xr.DataArray(tif_data, dims=('y', 'x')) 
-
-# Find number of rows i and columns j of the map
 num_i, num_j = FD_data.shape
 
+# Iterate over each year 
 for year in range(2021, 2100):
    
-    ############################### RIVER VOLUME #################################  
+    ###############################################################################
+    ################################ RIVER VOLUME #################################
+    ###############################################################################
     discharge_file = f'/data/Discharge/RCP{RCP}/{GCM}/Discharge_{RCP}_{GCM}_{year}.nc'
     discharge_data = xr.open_dataset(discharge_file) #m3/s 
      
@@ -104,14 +99,18 @@ for year in range(2021, 2100):
     
     River_vol = Width * 1000 * Depth * 1000 * Length  # m^3
     
-############################# ADVECTION RATES ################################
+    ###############################################################################
+    ############################## ADVECTION RATES ################################
+    ###############################################################################
     # Calculate the advection rate
     denominator = lakesvol + River_vol
     mask_nan_discharge = np.isnan(discharge_data.dis)
     # Apply the conditions
     adv_rate = np.where(mask_nan_discharge, np.nan, discharge_data.dis / denominator) #s-1
     
-######################## RETENTION RATES #####################################        
+    ###############################################################################
+    ############################## RETENTION RATES ################################
+    ###############################################################################        
     # Define the conditions and corresponding values
     condition_1 = discharge_data.dis > 14.2
     condition_2 = (discharge_data.dis <= 14.2) & (discharge_data.dis > 2.8)
@@ -126,7 +125,9 @@ for year in range(2021, 2100):
     #Calculate retention rate
     ret_rate = (1 / (River_vol + lakesvol)) * (River_vol * kret_riv.values + 0.038 * lakesarea)
 
-######################## WATER USE RATES #####################################
+    ###############################################################################
+    ############################## WATER USE RATES ################################
+    ###############################################################################
     # Load the NetCDF files
     runoff_file = f'/data/Runoff/RCP{RCP}/{GCM}/Runoff_{RCP}_{GCM}_{year}.nc'
     irr_file = f'/data/Irrigation/RCP{RCP}/{GCM}/Irr_{RCP}_{GCM}_{year}.nc'
@@ -154,7 +155,9 @@ for year in range(2021, 2100):
     
     use_rate = firr * (1-FEsoil) * adv_rate #s-1
 
-###################### FISH RICHNESS DENSITY ##################################
+    ###############################################################################
+    ########################### FISH RICHNESS DENSITY #############################
+    ###############################################################################
     temp = 0.0
     if RCP == 26:
         if GCM =='GFDL':    
@@ -226,42 +229,124 @@ for year in range(2021, 2100):
     frd = xr.full_like(denominator, np.nan)
     frd = frd.where(mask_zero_nan, fish_richness.fishrichness.values / denominator)             
 
-######################### Effect factor ################################
-
-################### Linear effect factor calculation #########################
-   
-    #Calculate effect factor
+    ###############################################################################
+    ############################### EFFECT FACTORS ################################
+    ###############################################################################
     EF_lake = frd * LEF_lake.data / FR_global
     EF_river = frd * LEF_river.data / FR_global
-    
     denominator = lakesvol + River_vol
     mask_zero_nan = np.logical_or(np.isnan(denominator), denominator < 1e-4)
     
-    # Initialize fraction arrays with NaNs
     fraction_lake = xr.full_like(denominator, np.nan)
     fraction_river = xr.full_like(denominator, np.nan)
-    # Perform the division for non-zero and non-NaN values
     valid_indices = ~mask_zero_nan
-    
     fraction_lake = fraction_lake.where(mask_zero_nan, lakesvol / denominator)
     fraction_river = fraction_river.where(mask_zero_nan, 1 - fraction_lake)
                   
     #Calculate final effect factors
     effect_factor = fraction_lake * EF_lake + fraction_river * EF_river
-    # Convert effect_factor to xarray DataArray
-    effect_factor_da = xr.DataArray(effect_factor, dims=('lat', 'lon'), name='effect_factor')
-    # Add coordinate values if needed (assuming Latitude and Longitude coordinates)
-    effect_factor_da['lat'] = discharge_data.lat
-    effect_factor_da['lon'] = discharge_data.lon
-    
-    # Convert the advection rate data to float32
-    effect_factor_da_float32 = effect_factor_da.astype(np.float32)
-    
-    # Save the advection rate as NetCDF file
-    EF_nc_file = f'EF_0.5_{year}.nc'
-    effect_factor_da_float32.to_netcdf(EF_nc_file)
-    print(f"Data saved to {EF_nc_file}")
 
+    ###############################################################################
+    ########################## CHARACTERIZATION FACTORS ###########################
+    ###############################################################################  
+    # Convert kret from days to seconds
+    ret_rate /= 86400
+        
+    # Calculate persistence of P (days)
+    tau = 1 / (adv_rate + ret_rate + use_rate) * 0.0000115741  # conversion from sec to days
+        
+    # Initialize FF and CF
+    FF = np.zeros((num_i, num_j))
+    CF = np.zeros((num_i, num_j))
+    
+    for i in range(num_i):
+        for j in range(num_j):
+            if np.isnan(discharge_data.dis[i, j]):
+                FF[i, j] = np.nan
+                CF[i, j] = np.nan
+            elif np.isnan(effect_factor[i, j]):
+                FF[i, j] = 0
+                CF[i, j] = 0
+            else:
+                current_direction = FD_data.data[i, j]
+                CF_current = 0
+                boundary_cell = False
+                new_i = i
+                new_j = j
+                z = -1
+                x = np.array([])
+                y = np.array([])
+    
+                while current_direction != 0 and current_direction != -9999:
+                    if current_direction == 1 and new_j < num_j:
+                        z += 1
+                        x = np.append(x, new_i)
+                        y= np.append(y, new_j + 1)
+                    elif current_direction == 2 and new_i < num_i and new_j < num_j:
+                        z += 1
+                        x = np.append(x, new_i + 1)
+                        y= np.append(y, new_j + 1)
+                    elif current_direction == 4 and new_i < num_i:
+                        z += 1
+                        x = np.append(x, new_i + 1)
+                        y= np.append(y, new_j)
+                    elif current_direction == 8 and new_i < num_i and new_j > 1:
+                        z += 1
+                        x= np.append(x, new_i + 1)
+                        y= np.append(y, new_j - 1)
+                    elif current_direction == 16 and new_j > 1:
+                        z += 1
+                        x= np.append(x, new_i)
+                        y= np.append(y, new_j - 1)
+                    elif current_direction == 32 and new_i > 1 and new_j > 1:
+                        z += 1
+                        x = np.append(x, new_i - 1)
+                        y= np.append(y, new_j - 1)
+                    elif current_direction == 64 and new_i > 1:
+                        z += 1
+                        x= np.append(x, new_i - 1)
+                        y = np.append(y, new_j)
+                    elif current_direction == 128 and new_i > 1 and new_j < num_j:
+                        z += 1
+                        x = np.append(x, new_i - 1)
+                        y = np.append(y, new_j + 1)
+                    else:
+                        boundary_cell = True
+    
+                    if not boundary_cell:
+                        if not np.isnan(effect_factor[int(x[z]), int(y[z])]) and not np.isnan(tau[int(x[z]), int(y[z])]):
+                            ff_before = 1
+                            if z > 1:
+                                for p in range(len(x) - 1):
+                                    ff_before *= adv_rate[int(x[p]), int(y[p])] / (adv_rate[int(x[p]), int(y[p])] + ret_rate[int(x[p]), int(y[p])] + use_rate[int(x[p]), int(y[p])])
+                            ff = (adv_rate[i, j] / (adv_rate[i, j] + ret_rate[i, j] + use_rate[i, j])) * ff_before
+                            CF_current += ff * tau[int(x[z]), int(y[z])] * effect_factor[int(x[z]), int(y[z])]
+                        else:
+                            CF_current = 0
+                            break
+    
+                        if (current_direction / FD_data.data[int(x[z]), int(y[z])]) == 16 or (current_direction / FD_data.data[int(x[z]), int(y[z])]) == 0.0625:
+                            break
+                        else:
+                            current_direction = FD_data.data[int(x[z]), int(y[z])]
+                            new_i = int(x[z])
+                            new_j = int(y[z])
+                    else:
+                        break
+    
+                CF[i, j] = CF_current + tau[i, j] * effect_factor[i, j]
+        
+    # Convert CF from days to years
+    CF /= 365
+    # Convert effect_factor to xarray DataArray
+    CF_da = xr.DataArray(CF, dims=('lat', 'lon'), name='CF')
+    CF_da['latitude'] = discharge_data.lat
+    CF_da['longitude'] = discharge_data.lon
+        
+    # Save the characterization factors as NetCDF file
+    CF_nc_file = f'CF_{RCP}_{GCM}_{year}.nc'
+    CF_da.to_netcdf(CF_nc_file)
+    print(f"Data saved to {CF_nc_file}")
 
 
 
