@@ -67,6 +67,23 @@ LEF_river = xr.where(climate_data_padded == 1, 777.98,
 #Define total fish richness in the world
 FR_global = 11425 #LIMITATION: CANT ESTIMATE HOW IT CHANGES OVER TIME
 
+# Open the ASCII grid file
+with rasterio.open('C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/Flow direction/g_network.asc') as src:
+     # Read the image data
+     tif_data = src.read(1)
+     # Get the metadata (e.g., coordinate reference system)
+     tif_meta = src.meta
+ 
+# Create x and y coordinates corresponding to the shape of the data
+y_coords = np.arange(tif_data.shape[0])
+x_coords = np.arange(tif_data.shape[1])
+ 
+# Convert the TIF data to xarray DataArray
+FD_data = xr.DataArray(tif_data, dims=('y', 'x')) 
+
+# Find number of rows i and columns j of the map
+num_i, num_j = FD_data.shape
+
 for year in range(2021, 2100):
    
     ############################### RIVER VOLUME #################################  
@@ -245,155 +262,8 @@ for year in range(2021, 2100):
     effect_factor_da_float32.to_netcdf(EF_nc_file)
     print(f"Data saved to {EF_nc_file}")
 
-#%%
 
-######################### CHARACTERIZATION FACTORS ############################
 
-# Open the ASCII grid file
-with rasterio.open('C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/Flow direction/g_network.asc') as src:
-    # Read the image data
-    tif_data = src.read(1)
-    # Get the metadata (e.g., coordinate reference system)
-    tif_meta = src.meta
 
-# Create x and y coordinates corresponding to the shape of the data
-y_coords = np.arange(tif_data.shape[0])
-x_coords = np.arange(tif_data.shape[1])
 
-# Convert the TIF data to xarray DataArray
-FD_data = xr.DataArray(tif_data, dims=('y', 'x')) 
 
-# Find number of rows i and columns j of the map
-num_i, num_j = FD_data.shape
-
-# Iterate over each year
-for year in range(2041, 2042): 
-    
-    
-    # Load disharge data
-    discharge_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS\Eutrophication CFs/GLOBAL/FUTURE/Discharge/RCP60/MIROC/Discharge_0.5_{year}.nc'
-    discharge_data = xr.open_dataset(discharge_file) #m3/s
-    
-    #Load removal rates
-    adv_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/Advection rates/RCP60/MIROC/Adv_0.5_{year}.nc'
-    adv_rate = xr.open_dataset(adv_file) #s-1
-    ret_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/Retention rates/RCP60/MIROC/Ret_0.5_{year}.nc'
-    ret_rate = xr.open_dataset(ret_file) #d-1
-    use_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/Water use rates/RCP60/MIROC/Use_0.5_{year}.nc'
-    use_rate = xr.open_dataset(use_file) #s-1
-  
-    # Convert kret from days to seconds
-    ret_rate.ret_rate.data /= 86400
-    
-    #Load effect factors
-    EF_file = f'C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/FUTURE/Effect factors/RCP60/MIROC/EF_0.5_{year}.nc'
-    EF = xr.open_dataset(EF_file)
-    
-    # Calculate persistence of P (days)
-    tau = 1 / (adv_rate.adv_rate.data + ret_rate.ret_rate.data + use_rate.use_rate.data) * 0.0000115741  # conversion from sec to days
-    # Convert effect_factor to xarray DataArray
-    #tau_da = xr.DataArray(tau, dims=('latitude', 'longitude'), name='tau')
-    # Add coordinate values if needed (assuming Latitude and Longitude coordinates)
-    #tau_da['latitude'] = adv_rate.latitude
-    #tau_da['longitude'] = adv_rate.longitude
-    
-    # Save the advection rate as NetCDF file
-    #tau_nc_file = f'Tau_0.5_{year}.nc'
-    #tau_da.to_netcdf(tau_nc_file)
-    #print(f"Data saved to {tau_nc_file}")
-    
-    # Initialize FF and CF
-    FF = np.zeros((num_i, num_j))
-    CF = np.zeros((num_i, num_j))
-
-    for i in range(num_i):
-        for j in range(num_j):
-            # Print i and j after each iteration
-            print(f"i: {i}, j: {j}")
-            if np.isnan(discharge_data.discharge.data[i, j]):
-                FF[i, j] = np.nan
-                CF[i, j] = np.nan
-            elif np.isnan(EF.effect_factor.data[i, j]):
-                FF[i, j] = 0
-                CF[i, j] = 0
-            else:
-                current_direction = FD_data.data[i, j]
-                CF_current = 0
-                boundary_cell = False
-                new_i = i
-                new_j = j
-                z = -1
-                x = np.array([])
-                y = np.array([])
-
-                while current_direction != 0 and current_direction != -9999:
-                    if current_direction == 1 and new_j < num_j:
-                        z += 1
-                        x = np.append(x, new_i)
-                        y= np.append(y, new_j + 1)
-                    elif current_direction == 2 and new_i < num_i and new_j < num_j:
-                        z += 1
-                        x = np.append(x, new_i + 1)
-                        y= np.append(y, new_j + 1)
-                    elif current_direction == 4 and new_i < num_i:
-                        z += 1
-                        x = np.append(x, new_i + 1)
-                        y= np.append(y, new_j)
-                    elif current_direction == 8 and new_i < num_i and new_j > 1:
-                        z += 1
-                        x= np.append(x, new_i + 1)
-                        y= np.append(y, new_j - 1)
-                    elif current_direction == 16 and new_j > 1:
-                        z += 1
-                        x= np.append(x, new_i)
-                        y= np.append(y, new_j - 1)
-                    elif current_direction == 32 and new_i > 1 and new_j > 1:
-                        z += 1
-                        x = np.append(x, new_i - 1)
-                        y= np.append(y, new_j - 1)
-                    elif current_direction == 64 and new_i > 1:
-                        z += 1
-                        x= np.append(x, new_i - 1)
-                        y = np.append(y, new_j)
-                    elif current_direction == 128 and new_i > 1 and new_j < num_j:
-                        z += 1
-                        x = np.append(x, new_i - 1)
-                        y = np.append(y, new_j + 1)
-                    else:
-                        boundary_cell = True
-
-                    if not boundary_cell:
-                        if not np.isnan(EF.effect_factor.data[int(x[z]), int(y[z])]) and not np.isnan(tau[int(x[z]), int(y[z])]):
-                            ff_before = 1
-                            if z > 1:
-                                for p in range(len(x) - 1):
-                                    ff_before *= adv_rate.adv_rate.data[int(x[p]), int(y[p])] / (adv_rate.adv_rate.data[int(x[p]), int(y[p])] + ret_rate.ret_rate.data[int(x[p]), int(y[p])] + use_rate.use_rate.data[int(x[p]), int(y[p])])
-                            ff = (adv_rate.adv_rate.data[i, j] / (adv_rate.adv_rate.data[i, j] + ret_rate.ret_rate.data[i, j] + use_rate.use_rate.data[i, j])) * ff_before
-                            CF_current += ff * tau[int(x[z]), int(y[z])] * EF.effect_factor.data[int(x[z]), int(y[z])]
-                        else:
-                            CF_current = 0
-                            break
-
-                        if (current_direction / FD_data.data[int(x[z]), int(y[z])]) == 16 or (current_direction / FD_data.data[int(x[z]), int(y[z])]) == 0.0625:
-                            break
-                        else:
-                            current_direction = FD_data.data[int(x[z]), int(y[z])]
-                            new_i = int(x[z])
-                            new_j = int(y[z])
-                    else:
-                        break
-
-                CF[i, j] = CF_current + tau[i, j] * EF.effect_factor.data[i, j]
-    
-    # Convert CF from days to years
-    CF /= 365
-    # Convert effect_factor to xarray DataArray
-    CF_da = xr.DataArray(CF, dims=('latitude', 'longitude'), name='CF')
-    # Add coordinate values if needed (assuming Latitude and Longitude coordinates)
-    CF_da['latitude'] = discharge_data.latitude
-    CF_da['longitude'] = discharge_data.longitude
-    
-    # Save the advection rate as NetCDF file
-    CF_nc_file = f'CF_0.5_{year}.nc'
-    CF_da.to_netcdf(CF_nc_file)
-    print(f"Data saved to {CF_nc_file}")
