@@ -20,56 +20,9 @@ RCP = 26
 #GCM = 'GFDL', 'HADGEM', 'IPSL', 'MIROC'
 GCM = 'GFDL'
 
-##################################################################################
-############################ RIVER DISCHARGE DATA ################################
-##################################################################################
-# Load the .nc4 file
-nc_file = '../data/...nc4'
-data = xr.open_dataset(nc_file)
-
-# Iterate over each year
-for year in range(2021, 2100):
-    # Select data for the current year
-    yearly_data = data.sel(time=str(year))
-    
-    # Calculate annual average
-    yearly_avg = yearly_data.mean(dim='time')
-
-    # Save new .nc file
-    new_nc_file = f'Discharge_{RCP}_{GCM}_{year}.nc'
-    yearly_avg.to_netcdf(new_nc_file) #m3/s
-    print(f"Annual river discharge data saved to {new_nc_file}")
-
-################################################################################
-################################ RUNOFF DATA ###################################
-################################################################################
-# Load the .nc4 file
-nc_file = '../data/...nc4'
-data = xr.open_dataset(nc_file)
-
-# Conversion factor from kg/m²/s to mm/year (assuming 1000 kg/m3 density)
-conversion_factor = 60 * 60 * 24 * 365  # seconds in a year
-
-# Iterate over each year
-for year in range(2021, 2100):
-    # Select data for the current year
-    yearly_data = data.sel(time=str(year))
-    
-    # Convert data to mm/year 
-    yearly_avg = yearly_data * conversion_factor
-
-    # Calculate annual average
-    yearly_avg = yearly_avg.mean(dim='time')
-
-    # Save new .nc file
-    new_nc_file = f'Runoff_{RCP}_{GCM}_{year}.nc'
-    yearly_avg.to_netcdf(new_nc_file) #mm/year
-    print(f"Annual runoff data saved to {new_nc_file}")
-    
 ###############################################################################
 ############################### LOAD RAW DATA #################################
 ###############################################################################
-
 # Load land area (m2)
 land_path = '/data/Land.nc'
 land =  xr.open_dataset(land_path)
@@ -121,6 +74,87 @@ y_coords = np.arange(tif_data.shape[0])
 x_coords = np.arange(tif_data.shape[1])
 FD_data = xr.DataArray(tif_data, dims=('y', 'x')) 
 num_i, num_j = FD_data.shape
+
+##################################################################################
+############################ RIVER DISCHARGE DATA ################################
+##################################################################################
+# Load the .nc4 file
+nc_file = '../data/...nc4'
+data = xr.open_dataset(nc_file)
+
+# Iterate over each year
+for year in range(2021, 2100):
+    # Select data for the current year
+    yearly_data = data.sel(time=str(year))
+    
+    # Calculate annual average
+    yearly_avg = yearly_data.mean(dim='time')
+
+    # Save new .nc file
+    new_nc_file = f'Discharge_{RCP}_{GCM}_{year}.nc'
+    yearly_avg.to_netcdf(new_nc_file) #m3/s
+    print(f"Annual river discharge data saved to {new_nc_file}")
+
+################################################################################
+################################ RUNOFF DATA ###################################
+################################################################################
+# Load the .nc4 file
+nc_file = '../data/...nc4'
+data = xr.open_dataset(nc_file)
+
+# Conversion factor from kg/m²/s to mm/year (assuming 1000 kg/m3 density)
+conversion_factor = 60 * 60 * 24 * 365  # seconds in a year
+
+# Iterate over each year
+for year in range(2021, 2100):
+    # Select data for the current year
+    yearly_data = data.sel(time=str(year))
+    
+    # Convert data to mm/year 
+    yearly_avg = yearly_data * conversion_factor
+
+    # Calculate annual average
+    yearly_avg = yearly_avg.mean(dim='time')
+
+    # Save new .nc file
+    new_nc_file = f'Runoff_{RCP}_{GCM}_{year}.nc'
+    yearly_avg.to_netcdf(new_nc_file) #mm/year
+    print(f"Annual runoff data saved to {new_nc_file}")
+
+###############################################################################
+############################### WATER IRRIGATION ##############################
+###############################################################################
+# Load the NetCDF files
+nc_file = '../data/...nc4'
+data = xr.open_dataset(nc_file, engine='netcdf4', decode_times=False)
+
+# Calculate the start and end indices for each year from 2021 to 2099
+start_index = (2021 - 2006) * 12  
+end_index = (2099 - 2006 + 1) * 12 
+
+# Define the number of seconds in each month 
+days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+seconds_in_month = np.array(days_in_month) * 24 * 60 * 60
+
+# Iterate over each year
+for year in range(2021, 2100):
+    # Calculate the indices for the current year
+    start_month = (year - 2006) * 12  
+    end_month = start_month + 12 
+
+    # Select data for the current year
+    data_year = data.isel(time=slice(start_month, end_month))
+
+    # Calculate annual average
+    yearly_total_kg_m2 = data_year.mean(dim='time')
+    
+    # Convert from kg/m2/s to m3/s (assuming 998 kg/m3 is the density conversion factor)
+    yearly_total_m3 = yearly_total_kg_m2 * land_area / 998
+
+    # Save new .nc file
+    new_nc_file = f'Irr_{RCP}_{GCM}_{year}.nc'
+    yearly_total_m3.to_netcdf(new_nc_file)
+    print(f'Annual water irrigation withdrawal data saved to {new_nc_file}')
 
 # Iterate over each year 
 for year in range(2021, 2100):
