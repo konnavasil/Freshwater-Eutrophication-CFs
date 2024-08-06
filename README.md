@@ -8,7 +8,7 @@ https://orcid.org/0000-0001-8609-9512
 Code generates freshwater eutrophication characterization factors, quantified as the potentially disappeared fraction of fish species per amount of phosphorus emitted annually.
 Results are provided at a global 30 arc-min resolution, for 8 different RCP-GCM climate change scenarios.
 
-############################## REQUIREMENTS ####################################
+############################## REQUIREMENTS ####################################                             
 This code was created using Python 3.11.5 and conda 23.9.0.
 Packages required:
 xarray
