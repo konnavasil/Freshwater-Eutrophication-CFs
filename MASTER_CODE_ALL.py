@@ -75,9 +75,11 @@ x_coords = np.arange(tif_data.shape[1])
 FD_data = xr.DataArray(tif_data, dims=('y', 'x')) 
 num_i, num_j = FD_data.shape
 
-##################################################################################
+###############################################################################
+############################ DATA PRE-PROCESSING ##############################
+###############################################################################
+
 ############################ RIVER DISCHARGE DATA ################################
-##################################################################################
 # Load the .nc4 file
 nc_file = '../data/...nc4'
 data = xr.open_dataset(nc_file)
@@ -95,9 +97,7 @@ for year in range(2021, 2100):
     yearly_avg.to_netcdf(new_nc_file) #m3/s
     print(f"Annual river discharge data saved to {new_nc_file}")
 
-################################################################################
 ################################ RUNOFF DATA ###################################
-################################################################################
 # Load the .nc4 file
 nc_file = '../data/...nc4'
 data = xr.open_dataset(nc_file)
@@ -121,9 +121,7 @@ for year in range(2021, 2100):
     yearly_avg.to_netcdf(new_nc_file) #mm/year
     print(f"Annual runoff data saved to {new_nc_file}")
 
-###############################################################################
 ############################### WATER IRRIGATION ##############################
-###############################################################################
 # Load the NetCDF files
 nc_file = '../data/...nc4'
 data = xr.open_dataset(nc_file, engine='netcdf4', decode_times=False)
@@ -156,9 +154,7 @@ for year in range(2021, 2100):
     yearly_total_m3.to_netcdf(new_nc_file)
     print(f'Annual water irrigation withdrawal data saved to {new_nc_file}')
 
-################################################################################
 ################################# FISH RICHNESS ################################
-################################################################################
 # Open the GeoTIFF file
 with rasterio.open("/data/...tif") as src1:
     fishbase_data = src1.read(1)  
@@ -275,7 +271,10 @@ for temp in temperatures:
     new_file = f'Fish_richness_{temp}.nc'
     fishrichness_data.to_netcdf(new_file)
     print(f"FSR data saved to {new_file}")
-    
+
+###############################################################################
+############################### CALCULATIONS ##################################
+###############################################################################
 # Iterate over each year 
 for year in range(2021, 2100):
    
