@@ -35,7 +35,7 @@ area_data =  xr.open_dataset(area_path)
 lakesarea = area_data['lakesarea'].data #m2
 
 # Open the TIF file using rasterio
-with rasterio.open('C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/Climate regions/Climate_0.5.tif') as src:
+with rasterio.open('/data/Climate_0.5.tif') as src:
     # Read the image data
     tif_data = src.read(1)
     # Get the metadata (e.g., coordinate reference system)
@@ -68,7 +68,7 @@ LEF_river = xr.where(climate_data_padded == 1, 777.98,
 FR_global = 11425 #LIMITATION: CANT ESTIMATE HOW IT CHANGES OVER TIME
 
 # Open the ASCII grid file
-with rasterio.open('C:/Users/KVasilakou/OneDrive - Universiteit Antwerpen/PhD/GIS/Eutrophication CFs/GLOBAL/Flow direction/g_network.asc') as src:
+with rasterio.open('/data/g_network.asc') as src:
      # Read the image data
      tif_data = src.read(1)
      # Get the metadata (e.g., coordinate reference system)
