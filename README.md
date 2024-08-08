@@ -1,5 +1,3 @@
-Created on Tue Feb 27 11:46:27 2024
-
 ################################### README ##################################### 
 
 Author: Konstantina Vasilakou
