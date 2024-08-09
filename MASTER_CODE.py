@@ -13,9 +13,9 @@ from osgeo import gdal
 ###############################################################################
 
 #SPECIFY CLIMATE CHANGE SCENARIO!!
-#RCP = 26, 60
+#Representative Concentration Pathway (RCP = 26, 60)
 RCP = 26
-#GCM = 'GFDL', 'HADGEM', 'IPSL', 'MIROC'
+#Global Climate model (GCM = 'GFDL', 'HADGEM', 'IPSL', 'MIROC')
 GCM = 'GFDL'
 
 ###############################################################################
